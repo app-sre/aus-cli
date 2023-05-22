@@ -4,7 +4,13 @@ This project contains the `aus` command line tool that simplifies the interactio
 
 ## Installation
 
-TBD - for now checkout the code and run `make build`
+Use one of the releases from <https://github.com/app-sre/aus-cli/releases> or directly download the latest release for your architecture with
+
+```shell
+curl -L -o aus "https://github.com/app-sre/aus-cli/releases/latest/download/aus_$(uname -s)_$(uname -m)"
+```
+
+Alternatively you can build from sources with `make build`.
 
 ## Log In
 

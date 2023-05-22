@@ -18,7 +18,7 @@ build:
 
 .PHONY: release
 release:
-	$(container_runner) run --rm -v "$(PWD):/app" -e GITHUB_TOKEN=$(GITHUB_TOKEN) --workdir=/app ghcr.io/goreleaser/goreleaser:v1.18.2
+	$(container_runner) run --rm -v "$(PWD):/app" -u $(id -u ${USER}):$(id -g ${USER}) -e GITHUB_TOKEN=$(GITHUB_TOKEN) --workdir=/app ghcr.io/goreleaser/goreleaser:v1.18.2 release
 
 .PHONY: test
 test: build
@@ -33,7 +33,3 @@ lint:
 	$(container_runner) run --rm -w app -v "$(PWD):/app" --workdir=/app \
 		quay.io/app-sre/golangci-lint:v$(shell cat .golangciversion) \
 		golangci-lint run
-
-.PHONY: clean
-clean:
-	rm -rf dist
