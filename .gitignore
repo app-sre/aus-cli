@@ -1,0 +1,8 @@
+*.orig
+*.patch
+*.rej
+/.vscode
+/aus
+/aus-*
+/.idea
+dist/

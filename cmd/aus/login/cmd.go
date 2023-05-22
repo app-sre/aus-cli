@@ -1,0 +1,231 @@
+/*
+Copyright (c) 2023 Red Hat, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package login
+
+import (
+	"fmt"
+	"os"
+
+	sdk "github.com/openshift-online/ocm-sdk-go"
+	"github.com/spf13/cobra"
+
+	"github.com/openshift-online/ocm-cli/pkg/config"
+	"github.com/openshift-online/ocm-cli/pkg/urls"
+)
+
+const (
+	productionURL  = "https://api.openshift.com"
+	stagingURL     = "https://api.stage.openshift.com"
+	integrationURL = "https://api.integration.openshift.com"
+)
+
+// When the value of the `--url` option is one of the keys of this map it will be replaced by the
+// corresponding value.
+var urlAliases = map[string]string{
+	"production":  productionURL,
+	"prod":        productionURL,
+	"prd":         productionURL,
+	"staging":     stagingURL,
+	"stage":       stagingURL,
+	"stg":         stagingURL,
+	"integration": integrationURL,
+	"int":         integrationURL,
+}
+
+var args struct {
+	tokenURL     string
+	clientID     string
+	clientSecret string
+	scopes       []string
+	url          string
+	token        string
+	insecure     bool
+}
+
+var Cmd = &cobra.Command{
+	Use:   "login",
+	Short: "Log in",
+	Long: "Log in, saving the credentials to the configuration file.\n" +
+		"The recommend way is using '--token', which you can obtain at: " +
+		urls.OfflineTokenPage,
+	Args: cobra.NoArgs,
+	RunE: run,
+}
+
+func init() {
+	flags := Cmd.Flags()
+	flags.StringVar(
+		&args.tokenURL,
+		"token-url",
+		"",
+		fmt.Sprintf(
+			"OpenID token URL. The default value is '%s'.",
+			sdk.DefaultTokenURL,
+		),
+	)
+	flags.StringVar(
+		&args.clientID,
+		"client-id",
+		"",
+		fmt.Sprintf(
+			"OpenID client identifier. The default value is '%s'.",
+			sdk.DefaultClientID,
+		),
+	)
+	flags.StringVar(
+		&args.clientSecret,
+		"client-secret",
+		"",
+		"OpenID client secret.",
+	)
+	flags.StringSliceVar(
+		&args.scopes,
+		"scope",
+		sdk.DefaultScopes,
+		"OpenID scope. If this option is used it will replace completely the default "+
+			"scopes. Can be repeated multiple times to specify multiple scopes.",
+	)
+	flags.StringVar(
+		&args.url,
+		"url",
+		sdk.DefaultURL,
+		"URL of the API gateway. The value can be the complete URL or an alias. The "+
+			"valid aliases are 'production', 'staging', 'integration' and their shorthands.",
+	)
+	flags.StringVar(
+		&args.token,
+		"token",
+		"",
+		"Access or refresh token.",
+	)
+	flags.BoolVar(
+		&args.insecure,
+		"insecure",
+		false,
+		"Enables insecure communication with the server. This disables verification of TLS "+
+			"certificates and host names.",
+	)
+}
+
+func run(cmd *cobra.Command, argv []string) error {
+	var err error
+
+	// Check mandatory options:
+	if args.url == "" {
+		return fmt.Errorf("Option '--url' is mandatory")
+	}
+
+	// Check that we have some kind of credentials:
+	haveSecret := args.clientID != "" && args.clientSecret != ""
+	haveToken := args.token != ""
+	if !haveSecret && !haveToken {
+		// Allow bare `aus login` to suggest the token page without noise of full help.
+		fmt.Fprintf(
+			os.Stderr,
+			"In order to log in it is mandatory to use '--token' "+
+				"or '--client-id' and '--client-secret'.\n"+
+				"You can obtain a token at: %s .\n"+
+				"See 'ocm login --help' for full help.\n",
+			urls.OfflineTokenPage,
+		)
+		os.Exit(1)
+	}
+
+	// Load the configuration file:
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("Can't load config file: %v", err)
+	}
+	if cfg == nil {
+		cfg = new(config.Config)
+	}
+
+	if haveToken {
+		// Encrypted tokens are assumed to be refresh tokens:
+		if config.IsEncryptedToken(args.token) {
+			cfg.AccessToken = ""
+			cfg.RefreshToken = args.token
+		} else {
+			// If a token has been provided parse it:
+			token, err := config.ParseToken(args.token)
+			if err != nil {
+				return fmt.Errorf("Can't parse token '%s': %v", args.token, err)
+			}
+			// Put the token in the place of the configuration that corresponds to its type:
+			typ, err := config.TokenType(token)
+			if err != nil {
+				return fmt.Errorf("Can't extract type from 'typ' claim of token '%s': %v", args.token, err)
+			}
+			switch typ {
+			case "Bearer", "":
+				cfg.AccessToken = args.token
+				cfg.RefreshToken = ""
+			case "Refresh", "Offline":
+				cfg.AccessToken = ""
+				cfg.RefreshToken = args.token
+			default:
+				return fmt.Errorf("Don't know how to handle token type '%s' in token '%s'", typ, args.token)
+			}
+		}
+
+	}
+
+	// Apply the default OpenID details if not explicitly provided by the user:
+	tokenURL := sdk.DefaultTokenURL
+	if args.tokenURL != "" {
+		tokenURL = args.tokenURL
+	}
+	clientID := sdk.DefaultClientID
+	if args.clientID != "" {
+		clientID = args.clientID
+	}
+
+	// If the value of the `--url` is any of the aliases then replace it with the corresponding
+	// real URL:
+	gatewayURL, ok := urlAliases[args.url]
+	if !ok {
+		gatewayURL = args.url
+	}
+
+	// Update the configuration with the values given in the command line:
+	cfg.TokenURL = tokenURL
+	cfg.ClientID = clientID
+	cfg.ClientSecret = args.clientSecret
+	cfg.Scopes = args.scopes
+	cfg.URL = gatewayURL
+	cfg.Insecure = args.insecure
+
+	// Create a connection and get the token to verify that the crendentials are correct:
+	connection, err := cfg.Connection()
+	if err != nil {
+		return fmt.Errorf("Can't create connection: %v", err)
+	}
+	accessToken, refreshToken, err := connection.Tokens()
+	if err != nil {
+		return fmt.Errorf("Can't get token: %v", err)
+	}
+
+	// Save the configuration
+	cfg.AccessToken = accessToken
+	cfg.RefreshToken = refreshToken
+	err = config.Save(cfg)
+	if err != nil {
+		return fmt.Errorf("Can't save config file: %v", err)
+	}
+
+	return nil
+}
