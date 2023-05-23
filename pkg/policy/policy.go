@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 )
 
 type ClusterUpgradePolicy struct {
@@ -69,4 +70,10 @@ func NewClusterUpgradePolicyFromReader(reader io.Reader) ([]ClusterUpgradePolicy
 	var policies []ClusterUpgradePolicy
 	err := json.NewDecoder(reader).Decode(&policies)
 	return policies, err
+}
+
+func SortPolicies(policies []ClusterUpgradePolicy) {
+	sort.Slice(policies, func(i, j int) bool {
+		return policies[i].ClusterName < policies[j].ClusterName
+	})
 }

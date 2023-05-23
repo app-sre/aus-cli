@@ -25,6 +25,7 @@ import (
 	"gitlab.cee.redhat.com/service/aus-cli/pkg/backend"
 	"gitlab.cee.redhat.com/service/aus-cli/pkg/ocm"
 	"gitlab.cee.redhat.com/service/aus-cli/pkg/output"
+	"gitlab.cee.redhat.com/service/aus-cli/pkg/policy"
 	"gitlab.cee.redhat.com/service/aus-cli/pkg/sectors"
 )
 
@@ -78,6 +79,11 @@ func run(cmd *cobra.Command, argv []string) error {
 	if err != nil {
 		return err
 	}
+	policiesList := []policy.ClusterUpgradePolicy{}
+	for _, p := range policies {
+		policiesList = append(policiesList, p)
+	}
+	policy.SortPolicies(policiesList)
 	sectorsConfigs, err := be.ListSectorConfiguration(args.organizationId)
 	if err != nil {
 		return err
@@ -102,11 +108,11 @@ func run(cmd *cobra.Command, argv []string) error {
 			}
 		}
 
-		w.WriteString("Clusters:\t(%d in total)\n", len(policies))
-		if len(policies) > 0 {
+		w.WriteString("Clusters:\t(%d in total)\n", len(policiesList))
+		if len(policiesList) > 0 {
 			w1.WriteString("Cluster Name\tAUS enabled\tSchedule\tSector\tMutexes\tSoak Days\tWorkloads\n")
 			w1.WriteString("------------\t-----------\t--------\t------\t-------\t---------\t---------\n")
-			for _, policy := range policies {
+			for _, policy := range policiesList {
 				mutexes := "<none>"
 				if len(policy.Conditions.Mutexes) > 0 {
 					mutexes = strings.Join(policy.Conditions.Mutexes, ", ")
