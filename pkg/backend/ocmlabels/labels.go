@@ -109,6 +109,20 @@ func listSubscriptionLabels(subscriptionId string, keyPrefix string, connection 
 	return labels.Items().Slice(), nil
 }
 
+func deleteSubscriptionLabels(subscriptionId string, keyPrefix string, connection *sdk.Connection, dryRun bool) error {
+	labels, err := listSubscriptionLabels(subscriptionId, keyPrefix, connection)
+	if err != nil {
+		return err
+	}
+	for _, label := range labels {
+		err = deleteOCMLabel(label, dryRun, connection)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func newLabelMap(labels []*amv1.Label) map[string]*amv1.Label {
 	labelMap := make(map[string]*amv1.Label)
 	for _, label := range labels {
@@ -117,11 +131,23 @@ func newLabelMap(labels []*amv1.Label) map[string]*amv1.Label {
 	return labelMap
 }
 
-func listSubscriptions(organizationId string, displayName string, connection *sdk.Connection) ([]*amv1.Subscription, error) {
-	searchQuery := ""
-	if displayName != "" {
-		searchQuery = fmt.Sprintf("organization_id = '%s' and managed = true and status in ('Active', 'Reserved') and display_name = '%s'", organizationId, displayName)
-	} else {
+func getSubscriptionForDisplayName(organizationId string, displayName string, connection *sdk.Connection) (*amv1.Subscription, error) {
+	searchQuery := fmt.Sprintf("organization_id = '%s' and managed = true and status in ('Active', 'Reserved') and display_name = '%s'", organizationId, displayName)
+	subscriptions, err := listSubscriptions(organizationId, searchQuery, connection)
+	if err != nil {
+		return nil, err
+	}
+	if len(subscriptions) == 0 {
+		return nil, nil
+	}
+	if len(subscriptions) > 1 {
+		return nil, fmt.Errorf("more than one subscription found for display name '%s'", displayName)
+	}
+	return subscriptions[0], nil
+}
+
+func listSubscriptions(organizationId string, searchQuery string, connection *sdk.Connection) ([]*amv1.Subscription, error) {
+	if searchQuery == "" {
 		searchQuery = fmt.Sprintf("organization_id = '%s' and managed = true and status in ('Active', 'Reserved')", organizationId)
 	}
 	subscriptions, err := connection.AccountsMgmt().V1().Subscriptions().List().Parameter("fetchLabels", "true").Size(100).Search(searchQuery).Send()

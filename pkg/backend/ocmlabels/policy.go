@@ -18,7 +18,6 @@ package ocmlabels
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -45,6 +44,27 @@ func (f *OCMLabelsPolicyBackend) ListPolicies(organizationId string, showCluster
 	}
 
 	return listPoliciesInOrganization(organizationId, showClustersWithoutPolicy, connection)
+}
+
+func (f *OCMLabelsPolicyBackend) DeletePolicy(organizationId string, clusterName string, dryRun bool) error {
+	connection, err := ocm.NewOCMConnection()
+	if err != nil {
+		return err
+	}
+	if organizationId == "" {
+		organizationId, err = ocm.CurrentOrganizationId(connection)
+		if err != nil {
+			return err
+		}
+	}
+
+	subscription, err := getSubscriptionForDisplayName(organizationId, clusterName, connection)
+	if err != nil {
+		return err
+	}
+
+	output.Log(dryRun, "Delete cluster upgrade policy from %s\n", clusterName)
+	return deleteSubscriptionLabels(subscription.ID(), newAusLabelKey(""), connection, dryRun)
 }
 
 func (f *OCMLabelsPolicyBackend) ApplyPolicies(organizationId string, policies []policy.ClusterUpgradePolicy, dumpPolicy bool, dryRun bool) error {
@@ -107,14 +127,11 @@ func (f *OCMLabelsPolicyBackend) applyPolicy(organizationId string, policy polic
 
 func validatePolicy(organizationId string, policy *policy.ClusterUpgradePolicy, connection *sdk.Connection) error {
 	if policy.SubscriptionID == "" {
-		subscriptions, err := listSubscriptions(organizationId, policy.ClusterName, connection)
+		subscription, err := getSubscriptionForDisplayName(organizationId, policy.ClusterName, connection)
 		if err != nil {
 			return err
 		}
-		if len(subscriptions) != 1 {
-			return fmt.Errorf("no active cluster '%s' found in organization %s", policy.ClusterName, organizationId)
-		}
-		policy.SubscriptionID = subscriptions[0].ID()
+		policy.SubscriptionID = subscription.ID()
 	}
 	return nil
 }

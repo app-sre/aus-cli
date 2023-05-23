@@ -29,6 +29,8 @@ type PolicyBackend interface {
 
 	ApplyPolicies(organizationId string, policies []policy.ClusterUpgradePolicy, dumpPolicy bool, dryRun bool) error
 
+	DeletePolicy(organizationId string, clusterName string, dryRun bool) error
+
 	ListBlockedVersionExpressions(organizationId string) ([]string, error)
 
 	ApplyBlockedVersionExpressions(organizationId string, blockExpressions []string, dumpVersionBlocks bool, dryRun bool) error
