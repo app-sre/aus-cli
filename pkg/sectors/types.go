@@ -143,7 +143,12 @@ func ConsolidateSectorDependencies(current []SectorDependencies, toAdd []SectorD
 		}
 	}
 
-	// todo - cleanup obsolete sectors - maybe
+	// cleanup obsolete sectors
+	for sectorName := range sectorMap {
+		if sectorMap[sectorName].Dependencies == nil || len(sectorMap[sectorName].Dependencies) == 0 {
+			delete(sectorMap, sectorName)
+		}
+	}
 
 	sectorDependencies := []SectorDependencies{}
 	for _, sector := range sectorMap {
