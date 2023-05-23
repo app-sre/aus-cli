@@ -23,9 +23,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/apply"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/describe"
+	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/delete"
 	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/get"
 	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/login"
+	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/status"
 	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/version"
 	"gitlab.cee.redhat.com/service/aus-cli/pkg/arguments"
 )
@@ -55,7 +56,8 @@ func init() {
 	root.AddCommand(login.Cmd)
 	root.AddCommand(get.Cmd)
 	root.AddCommand(apply.Cmd)
-	root.AddCommand(describe.Cmd)
+	root.AddCommand(status.Cmd)
+	root.AddCommand(delete.Cmd)
 	root.AddCommand(version.Cmd)
 }
 

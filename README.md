@@ -242,7 +242,7 @@ aus get version-blocks
 ]
 ```
 
-With `aus describe` you can inspect the entire configuration
+With `aus status` you can inspect the entire configuration
 
 ```shell
 Organization ID:           2Q0awarcxlarxaWwrFFpbLITiGu
@@ -254,12 +254,12 @@ Sector Configuration:      (2 in total)
   ----                     ----------
   prod                     stage
   stage
-Cluster upgrade policies:  (4 in total)
-  Cluster Name             Schedule     Sector  Mutexes      Soak Days  Workloads
-  ------------             --------     ------  -------      ---------  ---------
-  stage-1                  * * * * 1-4  stage   stage-mutex  0          my-service
-  stage-2                  * * * * 1-4  stage   stage-mutex  1          my-service
-  prod-1                   * * * * 1-4  prod    prod-mutex   5          my-service
-  prod-2                   * * * * 1-4  prod    prod-mutex   5          my-service
+Clusters:  (4 in total)
+  Cluster Name             AUS enabled  Schedule     Sector  Mutexes      Soak Days  Workloads
+  ------------             -----------  --------     ------  -------      ---------  ---------
+  stage-1                  true         * * * * 1-4  stage   stage-mutex  0          my-service
+  stage-2                  true         * * * * 1-4  stage   stage-mutex  1          my-service
+  prod-1                   true         * * * * 1-4  prod    prod-mutex   5          my-service
+  prod-2                   true         * * * * 1-4  prod    prod-mutex   5          my-service
 ```
 

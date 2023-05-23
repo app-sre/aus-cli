@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package describe
+package status
 
 import (
 	"fmt"
@@ -34,7 +34,7 @@ var args struct {
 }
 
 var Cmd = &cobra.Command{
-	Use:   "describe",
+	Use:   "status",
 	Short: "Describe an organization",
 	Long:  "Describe an organization with all clusters and policies",
 	RunE:  run,

@@ -32,4 +32,4 @@ fmt:
 lint:
 	$(container_runner) run --rm -w app -v "$(PWD):/app" --workdir=/app \
 		quay.io/app-sre/golangci-lint:v$(shell cat .golangciversion) \
-		golangci-lint run
+		golangci-lint run --timeout 15m
