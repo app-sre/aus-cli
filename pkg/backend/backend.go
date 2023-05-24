@@ -19,6 +19,7 @@ package backend
 import (
 	"fmt"
 
+	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 	"gitlab.cee.redhat.com/service/aus-cli/pkg/backend/ocmlabels"
 	"gitlab.cee.redhat.com/service/aus-cli/pkg/policy"
 	"gitlab.cee.redhat.com/service/aus-cli/pkg/sectors"
@@ -38,6 +39,8 @@ type PolicyBackend interface {
 	ListSectorConfiguration(organizationId string) ([]sectors.SectorDependencies, error)
 
 	ApplySectorConfiguration(organizationId string, sectorDependencies []sectors.SectorDependencies, dumpSectorDeps bool, dryRun bool) error
+
+	Status(organizationId string) (organization *amv1.Organization, policies []policy.ClusterUpgradePolicy, blockedVersions []string, sectors []sectors.SectorDependencies, err error)
 }
 
 func NewPolicyBackend(backendType string) (PolicyBackend, error) {

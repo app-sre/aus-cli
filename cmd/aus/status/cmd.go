@@ -25,8 +25,6 @@ import (
 	"gitlab.cee.redhat.com/service/aus-cli/pkg/backend"
 	"gitlab.cee.redhat.com/service/aus-cli/pkg/ocm"
 	"gitlab.cee.redhat.com/service/aus-cli/pkg/output"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/policy"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/sectors"
 )
 
 var args struct {
@@ -67,28 +65,7 @@ func run(cmd *cobra.Command, argv []string) error {
 	if err != nil {
 		return err
 	}
-	organization, err := ocm.GetOrganization(args.organizationId, connection)
-	if err != nil {
-		return err
-	}
-	blockedVersions, err := be.ListBlockedVersionExpressions(args.organizationId)
-	if err != nil {
-		return err
-	}
-	policies, err := be.ListPolicies(args.organizationId, true)
-	if err != nil {
-		return err
-	}
-	policiesList := []policy.ClusterUpgradePolicy{}
-	for _, p := range policies {
-		policiesList = append(policiesList, p)
-	}
-	policy.SortPolicies(policiesList)
-	sectorsConfigs, err := be.ListSectorConfiguration(args.organizationId)
-	if err != nil {
-		return err
-	}
-	sectorsConfigs = sectors.AddMissingSectors(sectorsConfigs)
+	organization, policies, blockedVersions, sectors, err := be.Status(args.organizationId)
 
 	// layout data
 	description, err := output.TabbedString(func(out io.Writer) error {
@@ -99,20 +76,20 @@ func run(cmd *cobra.Command, argv []string) error {
 		w.WriteString("OCM environment:\t%s\n", connection.URL())
 		output.PrintListMultiline(w, "Blocked Versions", blockedVersions)
 
-		w.WriteString("Sector Configuration:\t(%d in total)\n", len(sectorsConfigs))
-		if len(sectorsConfigs) > 0 {
+		w.WriteString("Sector Configuration:\t(%d in total)\n", len(sectors))
+		if len(sectors) > 0 {
 			w1.WriteString("Name\tDepends on\n")
 			w1.WriteString("----\t----------\n")
-			for _, sector := range sectorsConfigs {
+			for _, sector := range sectors {
 				w1.WriteString("%s\t%s\n", sector.Name, strings.Join(sector.Dependencies, ", "))
 			}
 		}
 
-		w.WriteString("Clusters:\t(%d in total)\n", len(policiesList))
-		if len(policiesList) > 0 {
+		w.WriteString("Clusters:\t(%d in total)\n", len(policies))
+		if len(policies) > 0 {
 			w1.WriteString("Cluster Name\tAUS enabled\tSchedule\tSector\tMutexes\tSoak Days\tWorkloads\n")
 			w1.WriteString("------------\t-----------\t--------\t------\t-------\t---------\t---------\n")
-			for _, policy := range policiesList {
+			for _, policy := range policies {
 				mutexes := "<none>"
 				if len(policy.Conditions.Mutexes) > 0 {
 					mutexes = strings.Join(policy.Conditions.Mutexes, ", ")
