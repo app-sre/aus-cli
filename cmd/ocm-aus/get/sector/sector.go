@@ -14,15 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package blockedversions
+package sector
 
 import (
 	"encoding/json"
 	"os"
 
+	"github.com/app-sre/aus-cli/pkg/backend"
+	"github.com/app-sre/aus-cli/pkg/output"
 	"github.com/spf13/cobra"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/backend"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/output"
 )
 
 var args struct {
@@ -30,9 +30,9 @@ var args struct {
 }
 
 var Cmd = &cobra.Command{
-	Use:   "version-blocks",
-	Short: "Lists the blocked versions for an organization",
-	Long:  "Lists the blocked versions for an organization",
+	Use:   "sectors",
+	Short: "Lists the sector configuration for an organization",
+	Long:  "Lists the sector configuration for an organization",
 	RunE:  run,
 }
 
@@ -56,10 +56,10 @@ func run(cmd *cobra.Command, argv []string) error {
 	if err != nil {
 		return err
 	}
-	blockedVersions, err := be.ListBlockedVersionExpressions(args.organizationId)
+	sectorConfiguration, err := be.ListSectorConfiguration(args.organizationId)
 	if err != nil {
 		return err
 	}
-	body, _ := json.Marshal(blockedVersions)
+	body, _ := json.Marshal(sectorConfiguration)
 	return output.PrettyList(os.Stdout, body)
 }

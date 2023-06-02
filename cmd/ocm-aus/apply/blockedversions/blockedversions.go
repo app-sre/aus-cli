@@ -20,9 +20,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/app-sre/aus-cli/pkg/backend"
+	"github.com/app-sre/aus-cli/pkg/blockedversions"
 	"github.com/spf13/cobra"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/backend"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/blockedversions"
 )
 
 var args struct {

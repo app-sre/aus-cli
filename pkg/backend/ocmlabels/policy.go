@@ -22,12 +22,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/app-sre/aus-cli/pkg/ocm"
+	"github.com/app-sre/aus-cli/pkg/output"
+	"github.com/app-sre/aus-cli/pkg/policy"
+	"github.com/app-sre/aus-cli/pkg/utils"
 	sdk "github.com/openshift-online/ocm-sdk-go"
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/ocm"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/output"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/policy"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/utils"
 )
 
 func (f *OCMLabelsPolicyBackend) ListPolicies(organizationId string, showClustersWithoutPolicy bool) (map[string]policy.ClusterUpgradePolicy, error) {

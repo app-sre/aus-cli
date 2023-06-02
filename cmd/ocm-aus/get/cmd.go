@@ -14,19 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apply
+package get
 
 import (
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/get/blockedversions"
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/get/policy"
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/get/sector"
 	"github.com/spf13/cobra"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/apply/blockedversions"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/apply/policy"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/apply/sector"
 )
 
 var Cmd = &cobra.Command{
-	Use:           "apply",
-	Short:         "Apply an update to an AUS resource",
-	Long:          "Apply an update to an AUS resource",
+	Use:           "get",
+	Short:         "Display AUS resources",
+	Long:          "Display AUS resources",
+	GroupID:       "AUS commands",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }

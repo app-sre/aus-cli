@@ -21,10 +21,10 @@ import (
 	"io"
 	"strings"
 
+	"github.com/app-sre/aus-cli/pkg/backend"
+	"github.com/app-sre/aus-cli/pkg/ocm"
+	"github.com/app-sre/aus-cli/pkg/output"
 	"github.com/spf13/cobra"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/backend"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/ocm"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/output"
 )
 
 var args struct {
@@ -32,10 +32,11 @@ var args struct {
 }
 
 var Cmd = &cobra.Command{
-	Use:   "status",
-	Short: "Describe an organization",
-	Long:  "Describe an organization with all clusters and policies",
-	RunE:  run,
+	Use:     "status",
+	Short:   "Describe an organization",
+	Long:    "Describe an organization with all clusters and policies",
+	GroupID: "AUS commands",
+	RunE:    run,
 }
 
 func init() {
@@ -66,6 +67,9 @@ func run(cmd *cobra.Command, argv []string) error {
 		return err
 	}
 	organization, policies, blockedVersions, sectors, err := be.Status(args.organizationId)
+	if err != nil {
+		return err
+	}
 
 	// layout data
 	description, err := output.TabbedString(func(out io.Writer) error {

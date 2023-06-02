@@ -21,11 +21,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/app-sre/aus-cli/pkg/blockedversions"
+	"github.com/app-sre/aus-cli/pkg/ocm"
+	"github.com/app-sre/aus-cli/pkg/output"
+	"github.com/app-sre/aus-cli/pkg/utils"
 	sdk "github.com/openshift-online/ocm-sdk-go"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/blockedversions"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/ocm"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/output"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/utils"
 )
 
 func (f *OCMLabelsPolicyBackend) ListBlockedVersionExpressions(organizationId string) ([]string, error) {

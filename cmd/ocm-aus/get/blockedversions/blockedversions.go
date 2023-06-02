@@ -14,17 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package policy
+package blockedversions
 
 import (
 	"encoding/json"
 	"os"
 
+	"github.com/app-sre/aus-cli/pkg/backend"
+	"github.com/app-sre/aus-cli/pkg/output"
 	"github.com/spf13/cobra"
-
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/backend"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/output"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/policy"
 )
 
 var args struct {
@@ -32,20 +30,20 @@ var args struct {
 }
 
 var Cmd = &cobra.Command{
-	Use:   "policies",
-	Short: "List cluster upgrade policies",
+	Use:   "version-blocks",
+	Short: "Lists the blocked versions for an organization",
+	Long:  "Lists the blocked versions for an organization",
 	RunE:  run,
 }
 
 func init() {
-	flags := Cmd.Flags()
-	flags.StringVarP(
+	cmdFlags := Cmd.Flags()
+	cmdFlags.StringVarP(
 		&args.organizationId,
 		"org-id",
 		"o",
 		"",
-		"The ID of the OCM organization that owns the cluster. "+
-			"Defaults to the organization of the logged in user.",
+		"The ID of the OCM organization to inspect",
 	)
 }
 
@@ -54,26 +52,14 @@ func run(cmd *cobra.Command, argv []string) error {
 	if err != nil {
 		return err
 	}
-	fe, err := backend.NewPolicyBackend(backendType)
+	be, err := backend.NewPolicyBackend(backendType)
 	if err != nil {
 		return err
 	}
-
-	// todo: autodetect organization ID if not specified
-	policies, err := fe.ListPolicies(args.organizationId, false)
+	blockedVersions, err := be.ListBlockedVersionExpressions(args.organizationId)
 	if err != nil {
 		return err
 	}
-
-	// build a list of policies and dump them to stdout
-	policiesSlice := []policy.ClusterUpgradePolicy{}
-
-	for _, p := range policies {
-		policiesSlice = append(policiesSlice, p)
-	}
-	body, err := json.Marshal(policiesSlice)
-	if err != nil {
-		return err
-	}
+	body, _ := json.Marshal(blockedVersions)
 	return output.PrettyList(os.Stdout, body)
 }

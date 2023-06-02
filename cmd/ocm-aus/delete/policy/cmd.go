@@ -19,7 +19,7 @@ package policy
 import (
 	"github.com/spf13/cobra"
 
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/backend"
+	"github.com/app-sre/aus-cli/pkg/backend"
 )
 
 var args struct {
@@ -36,6 +36,7 @@ var Cmd = &cobra.Command{
 
 func init() {
 	flags := Cmd.Flags()
+	flags.SortFlags = false
 	flags.StringVarP(
 		&args.organizationId,
 		"org-id",
@@ -52,7 +53,7 @@ func init() {
 		"Name of the cluster that holds the policy to delete. "+
 			"This name needs to match the cluster name in OCM.",
 	)
-	Cmd.MarkFlagRequired("cluster-name")
+	_ = Cmd.MarkFlagRequired("cluster-name")
 	flags.BoolVar(
 		&args.dryRun,
 		"dry-run",

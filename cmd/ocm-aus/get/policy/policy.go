@@ -14,15 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package sector
+package policy
 
 import (
 	"encoding/json"
 	"os"
 
 	"github.com/spf13/cobra"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/backend"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/output"
+
+	"github.com/app-sre/aus-cli/pkg/backend"
+	"github.com/app-sre/aus-cli/pkg/output"
+	"github.com/app-sre/aus-cli/pkg/policy"
 )
 
 var args struct {
@@ -30,20 +32,20 @@ var args struct {
 }
 
 var Cmd = &cobra.Command{
-	Use:   "sectors",
-	Short: "Lists the sector configuration for an organization",
-	Long:  "Lists the sector configuration for an organization",
+	Use:   "policies",
+	Short: "List cluster upgrade policies",
 	RunE:  run,
 }
 
 func init() {
-	cmdFlags := Cmd.Flags()
-	cmdFlags.StringVarP(
+	flags := Cmd.Flags()
+	flags.StringVarP(
 		&args.organizationId,
 		"org-id",
 		"o",
 		"",
-		"The ID of the OCM organization to inspect",
+		"The ID of the OCM organization that owns the cluster. "+
+			"Defaults to the organization of the logged in user.",
 	)
 }
 
@@ -52,14 +54,26 @@ func run(cmd *cobra.Command, argv []string) error {
 	if err != nil {
 		return err
 	}
-	be, err := backend.NewPolicyBackend(backendType)
+	fe, err := backend.NewPolicyBackend(backendType)
 	if err != nil {
 		return err
 	}
-	sectorConfiguration, err := be.ListSectorConfiguration(args.organizationId)
+
+	// todo: autodetect organization ID if not specified
+	policies, err := fe.ListPolicies(args.organizationId, false)
 	if err != nil {
 		return err
 	}
-	body, _ := json.Marshal(sectorConfiguration)
+
+	// build a list of policies and dump them to stdout
+	policiesSlice := []policy.ClusterUpgradePolicy{}
+
+	for _, p := range policies {
+		policiesSlice = append(policiesSlice, p)
+	}
+	body, err := json.Marshal(policiesSlice)
+	if err != nil {
+		return err
+	}
 	return output.PrettyList(os.Stdout, body)
 }

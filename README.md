@@ -1,32 +1,42 @@
 # Advanced Upgrade Service Command Line Tools
 
-This project contains the `aus` command line tool that simplifies the interaction with the Advanced Upgrade Service SRE capability available at <https://source.redhat.com/groups/public/sre/wiki/advanced_upgrade_service_aus>
+This project contains the `ocm aus` OCM CLI plugin, that simplifies the interaction with the Advanced Upgrade Service SRE capability available at <https://source.redhat.com/groups/public/sre/wiki/advanced_upgrade_service_aus>
 
 ## Installation
+
+## Option 1
 
 Use one of the releases from <https://github.com/app-sre/aus-cli/releases> or directly download the latest release for your architecture with
 
 ```shell
-curl -L -o aus "https://github.com/app-sre/aus-cli/releases/latest/download/aus_$(uname -s)_$(uname -m)"
+curl -L -o ocm-aus "https://github.com/app-sre/aus-cli/releases/latest/download/ocm_aus_$(uname -s)_$(uname -m)"
 ```
+
+and move it into one of your `$PATH`s.
+
+## Option 2
+
+Execute the following go install command to build and install the AUS CLI into $GOPATH/bin.
+
+```shell
+go install github.com/app-sre/aus-cli/cmd/ocm-aus@latest
+```
+
+## Option 3
 
 Alternatively you can build from sources with `make build`.
 
-## Log In
+## Usage
 
-The `aus` CLI interacts with OCM and therefore requires authentication.
+Install the [ocm-cli](https://github.com/openshift-online/ocm-cli#installation) and ensure that you are able to log in to an active OCM environment.
 
-`aus` will pick up an existing authenticated session from the `ocm` command line utility, so the [login instructions](https://console.redhat.com/openshift/token) for `ocm` apply. If you don't have the `ocm` utility installed, you can use
+Run `ocm login ...` to establish a login session with your chosen OCM environment. Login instructions can be found on <https://console.redhat.com/openshift/token>
 
-```shell
-aus login --token ...
-```
-
-with a token obtained from <https://console.redhat.com/openshift/token>
+Once logged in, the plug-in can be accessed by running `ocm aus` which will display command information and a command overviews.
 
 ## Manage cluster upgrade policies
 
-Create a new cluster upgrade policy with `aus apply policies [flags] [args]`
+Create a new cluster upgrade policy with `ocm aus apply policies [flags] [args]`
 
 | Flag           | Definition                                                                                                                                         |
 |----------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -43,7 +53,7 @@ Create a new cluster upgrade policy with `aus apply policies [flags] [args]`
 Policies can also be written to a file and applied from a file.
 
 ```shell
-aus apply policies --cluster-name my-cluster --workload service --schedule weekdays --dump | tee policy.json
+ocm aus apply policies --cluster-name my-cluster --workload service --schedule weekdays --dump | tee policy.json
 [
   {
     "conditions": {
@@ -57,7 +67,7 @@ aus apply policies --cluster-name my-cluster --workload service --schedule weekd
   }
 ]
 
-cat policy.json | aus apply policies -
+cat policy.json | ocm aus apply policies -
 Apply cluster upgrade policy to my-cluster
 ```
 
@@ -67,7 +77,7 @@ The policy file can also contain multiple policies.
 
 Versions can be blocked on an OCM organization level. The `version-blocks` sub-command can be used to block and unblock versions patterns. Patterns are specified as regular expressions.
 
-Manage blocked versions with `aus apply version-blocks [fags]`
+Manage blocked versions with `ocm aus apply version-blocks [fags]`
 
 | Flags              | Definition                                                                                                                     |
 |--------------------|--------------------------------------------------------------------------------------------------------------------------------|
@@ -77,10 +87,10 @@ Manage blocked versions with `aus apply version-blocks [fags]`
 | --org-id           | The OCM organization ID where the version blocks are managed. Defaults to the organization ID of the currently logged in user. |
 
 ```shell
-aus apply version-blocks --block-version "^4\\.13\\..*$" --block-version "^4\\.14\\..*$"
-aus apply version-blocks --unblock-version "^4\\.13\\..*$"
+ocm aus apply version-blocks --block-version "^4\\.13\\..*$" --block-version "^4\\.14\\..*$"
+ocm aus apply version-blocks --unblock-version "^4\\.13\\..*$"
 
-aus get version-blocks
+ocm aus get version-blocks
 [
    "^4\\.13\\..*$"
 ]
@@ -89,13 +99,13 @@ aus get version-blocks
 Version blocks can also be written to a file and applied from a file.
 
 ```shell
-aus apply version-blocks --block-version "^4\\.13\\.1$" --block-version "^4\\.14\\..*$" --replace --dump | tee version-blocks.json
+ocm aus apply version-blocks --block-version "^4\\.13\\.1$" --block-version "^4\\.14\\..*$" --replace --dump | tee version-blocks.json
 [
    "^4\\.13\\.1$"
    "^4\\.14\\..*$"
 ]
 
-cat version-blocks.json | aus apply version-blocks - --replace
+cat version-blocks.json | ocm aus apply version-blocks - --replace
 Apply blocked versions to organization 2Q0awarcxlarxaWwrFFpbLITiGu
 ```
 
@@ -105,7 +115,7 @@ Together with the `--replace-versions` option, applying from a file makes sure t
 
 Sectors are dependant groups of clusters. A version is only considered for upgrade within a sector if all dependant sectors have been fully upgraded to to that version.
 
-Create or replace an organizations sector dependencies with `aus apply sectors [flags]`
+Create or replace an organizations sector dependencies with `ocm aus apply sectors [flags]`
 
 | Flags        | Definition                                                                                                                               |
 |--------------|------------------------------------------------------------------------------------------------------------------------------------------|
@@ -115,11 +125,11 @@ Create or replace an organizations sector dependencies with `aus apply sectors [
 | --org-id     | The OCM organization ID where the sectors and dependencies are defined. Defaults to the organization ID of the currently logged in user. |
 
 ```shell
-aus apply sectors --add-dep prod=stage --add-dep stage=dev,dev-2
-aus apply sectors --remove-dep stage=dev-2
+ocm aus apply sectors --add-dep prod=stage --add-dep stage=dev,dev-2
+ocm aus apply sectors --remove-dep stage=dev-2
 Apply sector configuration to organization 2Q0awarcxlarxaWwrFFpbLITiGu
 
-aus get sectors
+ocm aus get sectors
 [
   {
     "dependencies": [
@@ -139,7 +149,7 @@ aus get sectors
 Sector dependencies can also be written to a file and applied from a file.
 
 ```shell
-aus apply sectors --add-dep prod=stage --add-dep stage=dev --replace --dump | tee sector-deps.json
+ocm aus apply sectors --add-dep prod=stage --add-dep stage=dev --replace --dump | tee sector-deps.json
 [
   {
     "dependencies": [
@@ -155,7 +165,7 @@ aus apply sectors --add-dep prod=stage --add-dep stage=dev --replace --dump | te
   }
 ]
 
-cat sector-deps.json | aus apply sectors - --replace
+cat sector-deps.json | ocm aus apply sectors - --replace
 Apply sector configuration to organization 2Q0awarcxlarxaWwrFFpbLITiGu
 ```
 
@@ -174,7 +184,7 @@ We will create policies for two stage and two production clusters. We want them 
 First create the policies for the stage clusters. `stage-1` defines `0` soak days, so an upgrade is scheduled immediately for every new version. `stage-2` cluster defines `1` soak day, therefore a another cluster with the same workload (`stage-1`) must run with a version for `1` day before the upgrade is scheduled. Both clusters share the same mutex, so only one of them can upgrade at a time.
 
 ```shell
-aus apply policies \
+ocm aus apply policies \
   --cluster-name stage-1 \
   --schedule weekdays \
   --workload my-service \
@@ -182,7 +192,7 @@ aus apply policies \
   --mutex stage-mutex \
   --soak-days 0
 
-aus apply policies \
+ocm aus apply policies \
   --cluster-name stage-2 \
   --schedule weekdays \
   --workload my-service \
@@ -191,10 +201,10 @@ aus apply policies \
   --soak-days 1
 ```
 
-Also both clusters belong to the `stage` sector. We will see in a moment how we can make sure that all stage clusters must be upgraded to a version before it is considered for the production clusters. First, lets create the policies for the production clusters.
+Both clusters belong to the `stage` sector. We will see in a moment how we can make sure that all stage clusters must be upgraded to a version before it is considered for the production clusters. First, lets create the policies for the production clusters.
 
 ```shell
-aus apply policies \
+ocm aus apply policies \
   --cluster-name prod-1 \
   --schedule weekdays \
   --workload my-service \
@@ -202,7 +212,7 @@ aus apply policies \
   --mutex prod-mutex \
   --soak-days 5
 
-aus apply policies \
+ocm aus apply policies \
   --cluster-name prod-2 \
   --schedule weekdays \
   --workload my-service \
@@ -218,9 +228,9 @@ We want to make sure that the production clusters upgrade only after ALL stage c
 Let's define that the `prod` sector depends on the `stage` sector.
 
 ```shell
-aus apply sectors --add-dep prod=stage
+ocm aus apply sectors --add-dep prod=stage
 
-aus get sectors
+ocm aus get sectors
 [
   {
     "dependencies": [
@@ -234,15 +244,15 @@ aus get sectors
 Now let's make sure upgrades to 4.13.x are blocked.
 
 ```shell
-aus apply version-blocks --block-version "^4\\.13\\..*$"
+ocm aus apply version-blocks --block-version "^4\\.13\\..*$"
 
-aus get version-blocks
+ocm aus get version-blocks
 [
    "^4\\.13\\..*$"
 ]
 ```
 
-With `aus status` you can inspect the entire configuration
+With `ocm aus status` you can inspect the entire configuration
 
 ```shell
 Organization ID:           2Q0awarcxlarxaWwrFFpbLITiGu

@@ -2,7 +2,7 @@
 *.patch
 *.rej
 /.vscode
-/aus
-/aus-*
+/ocm-aus
+/ocm-aus-*
 /.idea
 dist/

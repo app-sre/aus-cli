@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/app-sre/aus-cli/pkg/backend"
+	"github.com/app-sre/aus-cli/pkg/policy"
+	"github.com/app-sre/aus-cli/pkg/schedule"
 	"github.com/spf13/cobra"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/backend"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/policy"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/schedule"
 )
 
 var args struct {
@@ -52,6 +52,7 @@ var Cmd = &cobra.Command{
 
 func init() {
 	flags := Cmd.Flags()
+	flags.SortFlags = false
 	flags.StringVarP(
 		&args.organizationId,
 		"org-id",
@@ -101,7 +102,7 @@ func init() {
 		"mutex",
 		"m",
 		[]string{},
-		"The mutexs the cluster must hold before it can start an upgrade.",
+		"The mutexes the cluster must hold before it can start an upgrade.",
 	)
 	flags.BoolVar(
 		&args.dryRun,
