@@ -19,7 +19,7 @@ package output
 import (
 	"fmt"
 
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/debug"
+	"github.com/app-sre/aus-cli/pkg/debug"
 )
 
 func Debug(dryRun bool, format string, a ...interface{}) {

@@ -17,10 +17,10 @@ limitations under the License.
 package ocmlabels
 
 import (
+	"github.com/app-sre/aus-cli/pkg/ocm"
+	"github.com/app-sre/aus-cli/pkg/policy"
+	"github.com/app-sre/aus-cli/pkg/sectors"
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/ocm"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/policy"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/sectors"
 )
 
 func (f *OCMLabelsPolicyBackend) Status(organizationId string) (organization *amv1.Organization, policies []policy.ClusterUpgradePolicy, blockedVersions []string, sectors []sectors.SectorDependencies, err error) {

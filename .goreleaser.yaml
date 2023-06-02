@@ -1,21 +1,21 @@
 dist: /tmp/dist
 builds:
-  - main: cmd/aus/main.go
+  - main: cmd/ocm-aus/main.go
     env:
       - CGO_ENABLED=0
     goos:
       - linux
       - darwin
     ldflags:
-      - -X gitlab.cee.redhat.com/service/aus-cli/cmd/aus/version.Version={{.Version}}
-      - -X gitlab.cee.redhat.com/service/aus-cli/cmd/aus/version.Commit={{.Commit}}
+      - -X github.com/app-sre/aus-cli/cmd/ocm-aus/version.Version={{.Version}}
+      - -X github.com/app-sre/aus-cli/cmd/ocm-aus/version.Commit={{.Commit}}
     ignore:
       - goos: linux
         goarch: "386"
 archives:
   - format: binary
     name_template: >-
-      aus_
+      ocm_aus_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386

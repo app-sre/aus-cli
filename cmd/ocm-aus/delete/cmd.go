@@ -14,19 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package get
+package delete
 
 import (
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/delete/policy"
 	"github.com/spf13/cobra"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/get/blockedversions"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/get/policy"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/get/sector"
 )
 
 var Cmd = &cobra.Command{
-	Use:           "get",
-	Short:         "Display AUS resources",
-	Long:          "Display AUS resources",
+	Use:           "delete",
+	Short:         "Delete AUS resources",
+	Long:          "Delete AUS resources",
+	GroupID:       "AUS commands",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
@@ -34,6 +33,4 @@ var Cmd = &cobra.Command{
 func init() {
 	// Register the subcommands:
 	Cmd.AddCommand(policy.Cmd)
-	Cmd.AddCommand(sector.Cmd)
-	Cmd.AddCommand(blockedversions.Cmd)
 }

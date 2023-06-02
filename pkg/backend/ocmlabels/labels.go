@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/app-sre/aus-cli/pkg/arguments"
+	"github.com/app-sre/aus-cli/pkg/debug"
+	"github.com/app-sre/aus-cli/pkg/output"
 	"github.com/openshift-online/ocm-cli/pkg/dump"
 	sdk "github.com/openshift-online/ocm-sdk-go"
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/arguments"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/debug"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/output"
 )
 
 type OCMLabelsContainer struct {

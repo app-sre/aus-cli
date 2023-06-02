@@ -19,21 +19,20 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/apply"
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/delete"
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/get"
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/status"
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/version"
+	"github.com/app-sre/aus-cli/pkg/arguments"
 	"github.com/spf13/cobra"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/apply"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/delete"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/get"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/login"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/status"
-	"gitlab.cee.redhat.com/service/aus-cli/cmd/aus/version"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/arguments"
+	"os"
 )
 
 var root = &cobra.Command{
-	Use:           "aus",
-	Long:          "Command line tool for Advanced Upgrade Service (AUS).",
+	Use:           "ocm aus",
+	Short:         "AUS plug-in for the ocm-cli",
+	Long:          "This plug-in extends the ocm-cli to provide additional commands for working with Advanced Upgrade Service",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
@@ -50,10 +49,10 @@ func init() {
 	fs := root.PersistentFlags()
 	arguments.AddDebugFlag(fs)
 
-	root.PersistentFlags().String("backend", "ocmlabels", "Backend to store policies in. Supported: ocmlabels (requires OCM authentication)")
+	root.PersistentFlags().String("backend", "ocmlabels", "Backend to store policies in. Supported: ocmlabels")
 
 	// Register the subcommands:
-	root.AddCommand(login.Cmd)
+	root.AddGroup(&cobra.Group{ID: "AUS commands", Title: "AUS commands:"})
 	root.AddCommand(get.Cmd)
 	root.AddCommand(apply.Cmd)
 	root.AddCommand(status.Cmd)
@@ -63,7 +62,7 @@ func init() {
 
 func main() {
 	// This is needed to make `glog` believe that the flags have already been parsed, otherwise
-	// every log messages is prefixed by an error message stating the the flags haven't been
+	// every log messages is prefixed by an error message stating the flags haven't been
 	// parsed.
 	err := flag.CommandLine.Parse([]string{})
 	if err != nil {
@@ -71,7 +70,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Execute the root command and exit inmediately if there was no error:
+	// Execute the root command and exit immediately if there was no error:
 	root.SetArgs(os.Args[1:])
 	err = root.Execute()
 	if err == nil {
@@ -80,7 +79,5 @@ func main() {
 
 	message := fmt.Sprintf("Error: %s", err.Error())
 	fmt.Fprintf(os.Stderr, "%s\n", message)
-
-	// Exit signaling an error:
 	os.Exit(1)
 }

@@ -1,4 +1,4 @@
-module gitlab.cee.redhat.com/service/aus-cli
+module github.com/app-sre/aus-cli
 
 go 1.18
 

@@ -19,9 +19,9 @@ package arguments
 import (
 	"net/url"
 
+	"github.com/app-sre/aus-cli/pkg/debug"
 	sdk "github.com/openshift-online/ocm-sdk-go"
 	"github.com/spf13/pflag"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/debug"
 )
 
 // AddDebugFlag adds the '--debug' flag to the given set of command line flags.

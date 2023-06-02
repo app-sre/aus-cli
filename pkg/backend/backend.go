@@ -19,10 +19,10 @@ package backend
 import (
 	"fmt"
 
+	"github.com/app-sre/aus-cli/pkg/backend/ocmlabels"
+	"github.com/app-sre/aus-cli/pkg/policy"
+	"github.com/app-sre/aus-cli/pkg/sectors"
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/backend/ocmlabels"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/policy"
-	"gitlab.cee.redhat.com/service/aus-cli/pkg/sectors"
 )
 
 type PolicyBackend interface {

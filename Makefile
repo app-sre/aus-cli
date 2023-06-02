@@ -14,7 +14,7 @@ all: build
 
 .PHONY: build
 build:
-	go build ./cmd/aus
+	go build ./cmd/ocm-aus
 
 .PHONY: release
 release:
@@ -26,7 +26,7 @@ test: build
 
 .PHONY: fmt
 fmt:
-	gofmt -s -l -w cmd pkg tests
+	gofmt -s -l -w cmd pkg
 
 .PHONY: lint
 lint:
