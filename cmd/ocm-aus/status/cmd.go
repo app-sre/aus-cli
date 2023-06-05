@@ -28,7 +28,8 @@ import (
 )
 
 var args struct {
-	organizationId string
+	organizationId  string
+	showAllClusters bool
 }
 
 var Cmd = &cobra.Command{
@@ -48,6 +49,12 @@ func init() {
 		"",
 		"The ID of the OCM organization that owns the cluster. "+
 			"Defaults to the organization of the logged in user.",
+	)
+	flags.BoolVar(
+		&args.showAllClusters,
+		"show-all-clusters",
+		false,
+		"Show also clusters without defined upgrade policy.",
 	)
 }
 
@@ -89,7 +96,7 @@ func run(cmd *cobra.Command, argv []string) error {
 			}
 		}
 
-		w.WriteString("Clusters:\t(%d in total)\n", len(policies))
+		w.WriteString("Clusters:\n")
 		if len(policies) > 0 {
 			w1.WriteString("Cluster Name\tAUS enabled\tSchedule\tSector\tMutexes\tSoak Days\tWorkloads\n")
 			w1.WriteString("------------\t-----------\t--------\t------\t-------\t---------\t---------\n")
@@ -112,7 +119,7 @@ func run(cmd *cobra.Command, argv []string) error {
 						policy.Conditions.SoakDays,
 						strings.Join(policy.Workloads, ", "),
 					)
-				} else {
+				} else if args.showAllClusters {
 					w1.WriteString("%s\t%t\t%s\t%s\t%s\t%s\t%s\n",
 						policy.ClusterName,
 						false,
