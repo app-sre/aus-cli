@@ -59,8 +59,7 @@ func run(cmd *cobra.Command, argv []string) error {
 		return err
 	}
 
-	// todo: autodetect organization ID if not specified
-	policies, err := fe.ListPolicies(args.organizationId, false)
+	clusters, err := fe.ListPolicies(args.organizationId, false)
 	if err != nil {
 		return err
 	}
@@ -68,8 +67,8 @@ func run(cmd *cobra.Command, argv []string) error {
 	// build a list of policies and dump them to stdout
 	policiesSlice := []policy.ClusterUpgradePolicy{}
 
-	for _, p := range policies {
-		policiesSlice = append(policiesSlice, p)
+	for _, c := range clusters {
+		policiesSlice = append(policiesSlice, *c.Policy)
 	}
 	body, err := json.Marshal(policiesSlice)
 	if err != nil {

@@ -21,14 +21,22 @@ import (
 	"fmt"
 	"io"
 	"sort"
+
+	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
+	csv1 "github.com/openshift-online/ocm-sdk-go/clustersmgmt/v1"
 )
 
+type ClusterInfo struct {
+	Subscription *amv1.Subscription
+	Cluster      *csv1.Cluster
+	Policy       *ClusterUpgradePolicy
+}
+
 type ClusterUpgradePolicy struct {
-	ClusterName    string                         `json:"name"`
-	SubscriptionID string                         `json:"subscription_id,omitempty"`
-	Schedule       string                         `json:"schedule"`
-	Workloads      []string                       `json:"workloads"`
-	Conditions     ClusterUpgradePolicyConditions `json:"conditions"`
+	ClusterName string                         `json:"name"`
+	Schedule    string                         `json:"schedule"`
+	Workloads   []string                       `json:"workloads"`
+	Conditions  ClusterUpgradePolicyConditions `json:"conditions"`
 }
 
 type ClusterUpgradePolicyConditions struct {
@@ -38,8 +46,8 @@ type ClusterUpgradePolicyConditions struct {
 }
 
 func (p ClusterUpgradePolicy) Validate() error {
-	if p.ClusterName == "" && p.SubscriptionID == "" {
-		return fmt.Errorf("cluster name or subscription ID is required")
+	if p.ClusterName == "" {
+		return fmt.Errorf("cluster name is required")
 	}
 	if p.Conditions.SoakDays < 0 {
 		return fmt.Errorf("soak-days must be >= 0")
@@ -75,5 +83,11 @@ func NewClusterUpgradePolicyFromReader(reader io.Reader) ([]ClusterUpgradePolicy
 func SortPolicies(policies []ClusterUpgradePolicy) {
 	sort.Slice(policies, func(i, j int) bool {
 		return policies[i].ClusterName < policies[j].ClusterName
+	})
+}
+
+func SortClusters(clusters []ClusterInfo) {
+	sort.Slice(clusters, func(i, j int) bool {
+		return clusters[i].Cluster.Name() < clusters[j].Cluster.Name()
 	})
 }

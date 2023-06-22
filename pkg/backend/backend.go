@@ -26,7 +26,7 @@ import (
 )
 
 type PolicyBackend interface {
-	ListPolicies(organizationId string, showClustersWithoutPolicy bool) (map[string]policy.ClusterUpgradePolicy, error)
+	ListPolicies(organizationId string, showClustersWithoutPolicy bool) (map[string]*policy.ClusterInfo, error)
 
 	ApplyPolicies(organizationId string, policies []policy.ClusterUpgradePolicy, dumpPolicy bool, dryRun bool) error
 
@@ -40,7 +40,7 @@ type PolicyBackend interface {
 
 	ApplySectorConfiguration(organizationId string, sectorDependencies []sectors.SectorDependencies, dumpSectorDeps bool, dryRun bool) error
 
-	Status(organizationId string) (organization *amv1.Organization, policies []policy.ClusterUpgradePolicy, blockedVersions []string, sectors []sectors.SectorDependencies, err error)
+	Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusters []policy.ClusterInfo, blockedVersions []string, sectors []sectors.SectorDependencies, err error)
 }
 
 func NewPolicyBackend(backendType string) (PolicyBackend, error) {

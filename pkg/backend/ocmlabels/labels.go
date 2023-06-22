@@ -79,26 +79,30 @@ func (lc *OCMLabelsContainer) Reconcile(dryRun bool, connection *sdk.Connection)
 }
 
 func listOrganizationLabels(organizationId string, keyPrefix string, connection *sdk.Connection) ([]*amv1.Label, error) {
-	labels, err := connection.AccountsMgmt().V1().Organizations().Organization(organizationId).Labels().List().Parameter("search", fmt.Sprintf("key like '%s%%'", keyPrefix)).Send()
+	org_labels, err := connection.AccountsMgmt().V1().Organizations().Organization(organizationId).Labels().List().Parameter("search", fmt.Sprintf("key like '%s%%'", keyPrefix)).Send()
+	if err == nil {
+		return org_labels.Items().Slice(), nil
+	}
+	labels, err := connection.AccountsMgmt().V1().Labels().List().Parameter("search", fmt.Sprintf("organization_id = '%s' and key like '%s%%'", organizationId, keyPrefix)).Send()
 	if err != nil {
 		return nil, err
 	}
 	return labels.Items().Slice(), nil
+
 }
 
 func getOrganizationLabel(organizationId string, key string, connection *sdk.Connection) (*amv1.Label, error) {
-	response, err := connection.AccountsMgmt().V1().Organizations().Organization(organizationId).Labels().Label(key).Get().Send()
-	if response.Status() == 404 {
-		return nil, nil
-	}
+	labels, err := listOrganizationLabels(organizationId, key, connection)
 	if err != nil {
 		return nil, err
 	}
-	body, ok := response.GetBody()
-	if !ok {
+	if len(labels) == 0 {
 		return nil, nil
 	}
-	return body, nil
+	if len(labels) > 1 {
+		return nil, fmt.Errorf("found more than one label with key %s", key)
+	}
+	return labels[0], nil
 }
 
 func listSubscriptionLabels(subscriptionId string, keyPrefix string, connection *sdk.Connection) ([]*amv1.Label, error) {
@@ -129,32 +133,6 @@ func newLabelMap(labels []*amv1.Label) map[string]*amv1.Label {
 		labelMap[label.Key()] = label
 	}
 	return labelMap
-}
-
-func getSubscriptionForDisplayName(organizationId string, displayName string, connection *sdk.Connection) (*amv1.Subscription, error) {
-	searchQuery := fmt.Sprintf("organization_id = '%s' and managed = true and status in ('Active', 'Reserved') and display_name = '%s'", organizationId, displayName)
-	subscriptions, err := listSubscriptions(organizationId, searchQuery, connection)
-	if err != nil {
-		return nil, err
-	}
-	if len(subscriptions) == 0 {
-		return nil, nil
-	}
-	if len(subscriptions) > 1 {
-		return nil, fmt.Errorf("more than one subscription found for display name '%s'", displayName)
-	}
-	return subscriptions[0], nil
-}
-
-func listSubscriptions(organizationId string, searchQuery string, connection *sdk.Connection) ([]*amv1.Subscription, error) {
-	if searchQuery == "" {
-		searchQuery = fmt.Sprintf("organization_id = '%s' and managed = true and status in ('Active', 'Reserved')", organizationId)
-	}
-	subscriptions, err := connection.AccountsMgmt().V1().Subscriptions().List().Parameter("fetchLabels", "true").Size(100).Search(searchQuery).Send()
-	if err != nil {
-		return nil, err
-	}
-	return subscriptions.Items().Slice(), nil
 }
 
 func buildOCMLabel(key string, value string, subscriptionId string, organizationId string) (*amv1.Label, error) {
