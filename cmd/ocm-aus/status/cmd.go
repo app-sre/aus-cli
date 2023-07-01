@@ -73,7 +73,7 @@ func run(cmd *cobra.Command, argv []string) error {
 	if err != nil {
 		return err
 	}
-	organization, policies, blockedVersions, sectors, err := be.Status(args.organizationId)
+	organization, clusters, blockedVersions, sectors, err := be.Status(args.organizationId, args.showAllClusters)
 	if err != nil {
 		return err
 	}
@@ -97,31 +97,37 @@ func run(cmd *cobra.Command, argv []string) error {
 		}
 
 		w.WriteString("Clusters:\n")
-		if len(policies) > 0 {
-			w1.WriteString("Cluster Name\tAUS enabled\tSchedule\tSector\tMutexes\tSoak Days\tWorkloads\n")
-			w1.WriteString("------------\t-----------\t--------\t------\t-------\t---------\t---------\n")
-			for _, policy := range policies {
+		if len(clusters) > 0 {
+			w1.WriteString("Cluster Name\tProduct\tVersion\tChannel\tAUS enabled\tSchedule\tSector\tMutexes\tSoak Days\tWorkloads\n")
+			w1.WriteString("------------\t-------\t-------\t-------\t-----------\t--------\t------\t-------\t---------\t---------\n")
+			for _, cluster := range clusters {
 				mutexes := "<none>"
-				if len(policy.Conditions.Mutexes) > 0 {
-					mutexes = strings.Join(policy.Conditions.Mutexes, ", ")
-				}
 				sector := "<none>"
-				if policy.Conditions.Sector != "" {
-					sector = policy.Conditions.Sector
-				}
-				if policy.Schedule != "" {
-					w1.WriteString("%s\t%t\t%s\t%s\t%s\t%d\t%s\n",
-						policy.ClusterName,
+				if cluster.Policy.Validate() == nil {
+					if len(cluster.Policy.Conditions.Mutexes) > 0 {
+						mutexes = strings.Join(cluster.Policy.Conditions.Mutexes, ", ")
+					}
+					if cluster.Policy.Conditions.Sector != "" {
+						sector = cluster.Policy.Conditions.Sector
+					}
+					w1.WriteString("%s\t%s\t%s\t%s\t%t\t%s\t%s\t%s\t%d\t%s\n",
+						cluster.Cluster.Name(),
+						cluster.Cluster.Product().ID(),
+						cluster.Cluster.Version().RawID(),
+						cluster.Cluster.Version().ChannelGroup(),
 						true,
-						policy.Schedule,
+						cluster.Policy.Schedule,
 						sector,
 						mutexes,
-						policy.Conditions.SoakDays,
-						strings.Join(policy.Workloads, ", "),
+						cluster.Policy.Conditions.SoakDays,
+						strings.Join(cluster.Policy.Workloads, ", "),
 					)
-				} else if args.showAllClusters {
-					w1.WriteString("%s\t%t\t%s\t%s\t%s\t%s\t%s\n",
-						policy.ClusterName,
+				} else {
+					w1.WriteString("%s\t%s\t%s\t%s\t%t\t%s\t%s\t%s\t%s\t%s\n",
+						cluster.Cluster.Name(),
+						cluster.Cluster.Product().ID(),
+						cluster.Cluster.Version().RawID(),
+						cluster.Cluster.Version().ChannelGroup(),
 						false,
 						"<none>",
 						sector,

@@ -28,9 +28,10 @@ import (
 	"github.com/app-sre/aus-cli/pkg/utils"
 	sdk "github.com/openshift-online/ocm-sdk-go"
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
+	csv1 "github.com/openshift-online/ocm-sdk-go/clustersmgmt/v1"
 )
 
-func (f *OCMLabelsPolicyBackend) ListPolicies(organizationId string, showClustersWithoutPolicy bool) (map[string]policy.ClusterUpgradePolicy, error) {
+func (f *OCMLabelsPolicyBackend) ListPolicies(organizationId string, showClustersWithoutPolicy bool) (map[string]*policy.ClusterInfo, error) {
 	connection, err := ocm.NewOCMConnection()
 	if err != nil {
 		return nil, err
@@ -101,20 +102,20 @@ func (f *OCMLabelsPolicyBackend) ApplyPolicies(organizationId string, policies [
 }
 
 func (f *OCMLabelsPolicyBackend) applyPolicy(organizationId string, policy policy.ClusterUpgradePolicy, connection *sdk.Connection, dryRun bool) error {
-	err := validatePolicy(organizationId, &policy, connection)
+	subscription, err := getSubscriptionForDisplayName(organizationId, policy.ClusterName, connection)
 	if err != nil {
 		return err
 	}
 
 	// get current labels and build a container out of them
-	policyLabels, err := listSubscriptionLabels(policy.SubscriptionID, newAusLabelKey(""), connection)
+	policyLabels, err := listSubscriptionLabels(subscription.ID(), newAusLabelKey(""), connection)
 	if err != nil {
 		return err
 	}
 	labelsContainer := NewOCMLabelsContainer(policyLabels)
 
 	// build labels for policy and add them to the container
-	desiredLabels, err := newClusterUpgradePolicyFromOCMLabels(policy)
+	desiredLabels, err := newClusterUpgradePolicyFromOCMLabels(policy, subscription.ID())
 	if err != nil {
 		return err
 	}
@@ -125,59 +126,43 @@ func (f *OCMLabelsPolicyBackend) applyPolicy(organizationId string, policy polic
 	return labelsContainer.Reconcile(dryRun, connection)
 }
 
-func validatePolicy(organizationId string, policy *policy.ClusterUpgradePolicy, connection *sdk.Connection) error {
-	if policy.SubscriptionID == "" {
-		subscription, err := getSubscriptionForDisplayName(organizationId, policy.ClusterName, connection)
-		if err != nil {
-			return err
-		}
-		policy.SubscriptionID = subscription.ID()
-	}
-	return nil
-}
-
-func listPoliciesInOrganization(organizationId string, showClustersWithoutPolicy bool, connection *sdk.Connection) (map[string]policy.ClusterUpgradePolicy, error) {
-	policies := make(map[string]policy.ClusterUpgradePolicy)
-	subscriptions, err := listSubscriptions(organizationId, "", connection)
+func listPoliciesInOrganization(organizationId string, showClustersWithoutPolicy bool, connection *sdk.Connection) (map[string]*policy.ClusterInfo, error) {
+	cluster_map := make(map[string]*policy.ClusterInfo)
+	clusterInfos, err := clusterInfos(organizationId, "", connection)
 	if err != nil {
 		return nil, err
 	}
-	for _, subscription := range subscriptions {
-		policy, err := getPolicyForSubscription(subscription, connection)
-		if err != nil {
-			return nil, err
-		}
-		if policy != nil && (policy.Schedule != "" || showClustersWithoutPolicy) {
-			policies[policy.ClusterName] = *policy
+	for _, cluster := range clusterInfos {
+		if (cluster.Policy != nil && cluster.Policy.Validate() == nil) || showClustersWithoutPolicy {
+			cluster_map[cluster.Cluster.Name()] = cluster
 		}
 	}
-	return policies, nil
+	return cluster_map, nil
 }
 
-func newClusterUpgradePolicyFromOCMLabels(policy policy.ClusterUpgradePolicy) ([]*amv1.Label, error) {
+func newClusterUpgradePolicyFromOCMLabels(policy policy.ClusterUpgradePolicy, subscriptionID string) ([]*amv1.Label, error) {
 	labels := []*amv1.Label{}
-	soakDayLabel, _ := buildOCMLabel(newAusLabelKey("soak-days"), strconv.Itoa(policy.Conditions.SoakDays), policy.SubscriptionID, "")
+	soakDayLabel, _ := buildOCMLabel(newAusLabelKey("soak-days"), strconv.Itoa(policy.Conditions.SoakDays), subscriptionID, "")
 	labels = append(labels, soakDayLabel)
-	workloadsLabel, _ := buildOCMLabel(newAusLabelKey("workloads"), utils.StringArrayToCSV(policy.Workloads), policy.SubscriptionID, "")
+	workloadsLabel, _ := buildOCMLabel(newAusLabelKey("workloads"), utils.StringArrayToCSV(policy.Workloads), subscriptionID, "")
 	labels = append(labels, workloadsLabel)
 	if policy.Conditions.Sector != "" {
-		sectorLabel, _ := buildOCMLabel(newAusLabelKey("sector"), policy.Conditions.Sector, policy.SubscriptionID, "")
+		sectorLabel, _ := buildOCMLabel(newAusLabelKey("sector"), policy.Conditions.Sector, subscriptionID, "")
 		labels = append(labels, sectorLabel)
 	}
-	scheduleLabel, _ := buildOCMLabel(newAusLabelKey("schedule"), policy.Schedule, policy.SubscriptionID, "")
+	scheduleLabel, _ := buildOCMLabel(newAusLabelKey("schedule"), policy.Schedule, subscriptionID, "")
 	labels = append(labels, scheduleLabel)
 	if len(policy.Conditions.Mutexes) > 0 {
-		mutexesLabel, _ := buildOCMLabel(newAusLabelKey("mutexes"), utils.StringArrayToCSV(policy.Conditions.Mutexes), policy.SubscriptionID, "")
+		mutexesLabel, _ := buildOCMLabel(newAusLabelKey("mutexes"), utils.StringArrayToCSV(policy.Conditions.Mutexes), subscriptionID, "")
 		labels = append(labels, mutexesLabel)
 	}
 	return labels, nil
 }
 
-func getPolicyForSubscription(subscription *amv1.Subscription, connection *sdk.Connection) (*policy.ClusterUpgradePolicy, error) {
+func getPolicyForSubscription(subscription *amv1.Subscription, cluster *csv1.Cluster) (*policy.ClusterUpgradePolicy, error) {
 	labelsMap := newLabelMap(subscription.Labels())
 	policy := policy.ClusterUpgradePolicy{
-		ClusterName:    subscription.DisplayName(),
-		SubscriptionID: subscription.ID(),
+		ClusterName: subscription.DisplayName(),
 	}
 
 	scheduleLabel, ok := labelsMap[newAusLabelKey("schedule")]

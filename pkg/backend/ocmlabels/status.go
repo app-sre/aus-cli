@@ -23,7 +23,7 @@ import (
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 )
 
-func (f *OCMLabelsPolicyBackend) Status(organizationId string) (organization *amv1.Organization, policies []policy.ClusterUpgradePolicy, blockedVersions []string, sectors []sectors.SectorDependencies, err error) {
+func (f *OCMLabelsPolicyBackend) Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusters []policy.ClusterInfo, blockedVersions []string, sectors []sectors.SectorDependencies, err error) {
 	connection, err := ocm.NewOCMConnection()
 	if err != nil {
 		return
@@ -37,15 +37,15 @@ func (f *OCMLabelsPolicyBackend) Status(organizationId string) (organization *am
 	if err != nil {
 		return
 	}
-	policiesMap, err := listPoliciesInOrganization(organization.ID(), true, connection)
+	clustersMap, err := listPoliciesInOrganization(organization.ID(), showClustersWithoutPolicy, connection)
 	if err != nil {
 		return
 	}
-	policies = []policy.ClusterUpgradePolicy{}
-	for _, p := range policiesMap {
-		policies = append(policies, p)
+	clusters = []policy.ClusterInfo{}
+	for _, c := range clustersMap {
+		clusters = append(clusters, *c)
 	}
-	policy.SortPolicies(policies)
+	policy.SortClusters(clusters)
 	sectors, err = listSectorConfigurationFromOrganizationLabels(organization.ID(), connection)
 	return
 }
