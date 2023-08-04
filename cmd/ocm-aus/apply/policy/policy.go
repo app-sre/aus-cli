@@ -27,14 +27,15 @@ import (
 )
 
 var args struct {
-	organizationId string
-	clusterName    string
-	clusterUUID    string
-	schedule       string
-	workloads      []string
-	soakDays       int
-	sector         string
-	mutexes        []string
+	organizationId            string
+	clusterName               string
+	clusterUUID               string
+	schedule                  string
+	workloads                 []string
+	soakDays                  int
+	sector                    string
+	mutexes                   []string
+	blockedVersionExpressions []string
 
 	dryRun bool
 	dump   bool
@@ -104,6 +105,13 @@ func init() {
 		[]string{},
 		"The mutexes the cluster must hold before it can start an upgrade.",
 	)
+	flags.StringArrayVarP(
+		&args.blockedVersionExpressions,
+		"blocked-versions",
+		"b",
+		[]string{},
+		"Blocked version expressions.",
+	)
 	flags.BoolVar(
 		&args.dryRun,
 		"dry-run",
@@ -140,6 +148,7 @@ func run(cmd *cobra.Command, argv []string) error {
 				args.soakDays,
 				args.sector,
 				args.mutexes,
+				args.blockedVersionExpressions,
 			),
 		}
 	}

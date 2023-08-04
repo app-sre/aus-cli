@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/app-sre/aus-cli/pkg/backend"
+	"github.com/app-sre/aus-cli/pkg/blockedversions"
 	"github.com/app-sre/aus-cli/pkg/ocm"
 	"github.com/app-sre/aus-cli/pkg/output"
 	"github.com/spf13/cobra"
@@ -77,6 +78,10 @@ func run(cmd *cobra.Command, argv []string) error {
 	if err != nil {
 		return err
 	}
+	blockedVersionExpressions, err := blockedversions.ParsedBlockedVersionExpressions(blockedVersions)
+	if err != nil {
+		return err
+	}
 
 	// layout data
 	description, err := output.TabbedString(func(out io.Writer) error {
@@ -96,10 +101,10 @@ func run(cmd *cobra.Command, argv []string) error {
 			}
 		}
 
-		w.WriteString("Clusters:\n")
+		w.WriteString("Clusters:\t(%d in total)\n", len(clusters))
 		if len(clusters) > 0 {
-			w1.WriteString("Cluster Name\tProduct\tVersion\tChannel\tAUS enabled\tSchedule\tSector\tMutexes\tSoak Days\tWorkloads\n")
-			w1.WriteString("------------\t-------\t-------\t-------\t-----------\t--------\t------\t-------\t---------\t---------\n")
+			w1.WriteString("Cluster Name\tProduct\tVersion\tChannel\tAUS enabled\tSchedule\tSector\tMutexes\tSoak Days\tWorkloads\tBlocked Versions\tAvailable Upgrades\n")
+			w1.WriteString("------------\t-------\t-------\t-------\t-----------\t--------\t------\t-------\t---------\t---------\t----------------\t------------------\n")
 			for _, cluster := range clusters {
 				mutexes := "<none>"
 				sector := "<none>"
@@ -110,7 +115,7 @@ func run(cmd *cobra.Command, argv []string) error {
 					if cluster.Policy.Conditions.Sector != "" {
 						sector = cluster.Policy.Conditions.Sector
 					}
-					w1.WriteString("%s\t%s\t%s\t%s\t%t\t%s\t%s\t%s\t%d\t%s\n",
+					w1.WriteString("%s\t%s\t%s\t%s\t%t\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
 						cluster.Cluster.Name(),
 						cluster.Cluster.Product().ID(),
 						cluster.Cluster.Version().RawID(),
@@ -121,9 +126,11 @@ func run(cmd *cobra.Command, argv []string) error {
 						mutexes,
 						cluster.Policy.Conditions.SoakDays,
 						strings.Join(cluster.Policy.Workloads, ", "),
+						strings.Join(cluster.Policy.Conditions.BlockedVersions, ", "),
+						strings.Join(cluster.AvailableUpgrades(blockedVersionExpressions), ", "),
 					)
 				} else {
-					w1.WriteString("%s\t%s\t%s\t%s\t%t\t%s\t%s\t%s\t%s\t%s\n",
+					w1.WriteString("%s\t%s\t%s\t%s\t%t\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 						cluster.Cluster.Name(),
 						cluster.Cluster.Product().ID(),
 						cluster.Cluster.Version().RawID(),
@@ -134,6 +141,8 @@ func run(cmd *cobra.Command, argv []string) error {
 						mutexes,
 						"<none>",
 						"<none>",
+						strings.Join(cluster.Policy.Conditions.BlockedVersions, ", "),
+						strings.Join(cluster.AvailableUpgrades(blockedVersionExpressions), ", "),
 					)
 				}
 			}

@@ -24,3 +24,12 @@ import (
 func StringArrayToCSV(array []string) string {
 	return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(array)), ","), "[]")
 }
+
+func StringInArray(arr []string, str string) bool {
+	for _, s := range arr {
+		if s == str {
+			return true
+		}
+	}
+	return false
+}
