@@ -19,6 +19,7 @@ package blockedversions
 import (
 	"encoding/json"
 	"io"
+	"regexp"
 	"sort"
 )
 
@@ -58,4 +59,16 @@ func ConsolidateVersionBlocks(currentVersionBlocks []string, toBlock []string, t
 	}
 
 	return result
+}
+
+func ParsedBlockedVersionExpressions(blockedVersions []string) ([]*regexp.Regexp, error) {
+	var blockedVersionExpressions []*regexp.Regexp
+	for _, blockedVersion := range blockedVersions {
+		blockedVersionExpression, err := regexp.Compile(blockedVersion)
+		if err != nil {
+			return nil, err
+		}
+		blockedVersionExpressions = append(blockedVersionExpressions, blockedVersionExpression)
+	}
+	return blockedVersionExpressions, nil
 }

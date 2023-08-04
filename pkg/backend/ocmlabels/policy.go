@@ -31,6 +31,22 @@ import (
 	csv1 "github.com/openshift-online/ocm-sdk-go/clustersmgmt/v1"
 )
 
+var SOAK_DAYS_LABEL_KEY = newAusLabelKey("soak-days")
+var WORKLOADS_LABEL_KEY = newAusLabelKey("workloads")
+var SECTOR_LABEL_KEY = newAusLabelKey("sector")
+var SCHEDULE_LABEL_KEY = newAusLabelKey("schedule")
+var MUTEXES_LABEL_KEY = newAusLabelKey("mutexes")
+var BLOCKED_VERSIONS_LABEL_KEY = newAusLabelKey("blocked-versions")
+
+var SUPPORTED_POLICY_LABELS = []string{
+	SOAK_DAYS_LABEL_KEY,
+	WORKLOADS_LABEL_KEY,
+	SECTOR_LABEL_KEY,
+	SCHEDULE_LABEL_KEY,
+	MUTEXES_LABEL_KEY,
+	BLOCKED_VERSIONS_LABEL_KEY,
+}
+
 func (f *OCMLabelsPolicyBackend) ListPolicies(organizationId string, showClustersWithoutPolicy bool) (map[string]*policy.ClusterInfo, error) {
 	connection, err := ocm.NewOCMConnection()
 	if err != nil {
@@ -112,7 +128,7 @@ func (f *OCMLabelsPolicyBackend) applyPolicy(organizationId string, policy polic
 	if err != nil {
 		return err
 	}
-	labelsContainer := NewOCMLabelsContainer(policyLabels)
+	labelsContainer := NewRestrictingOCMLabelsContainer(policyLabels, SUPPORTED_POLICY_LABELS)
 
 	// build labels for policy and add them to the container
 	desiredLabels, err := newClusterUpgradePolicyFromOCMLabels(policy, subscription.ID())
@@ -142,46 +158,50 @@ func listPoliciesInOrganization(organizationId string, showClustersWithoutPolicy
 
 func newClusterUpgradePolicyFromOCMLabels(policy policy.ClusterUpgradePolicy, subscriptionID string) ([]*amv1.Label, error) {
 	labels := []*amv1.Label{}
-	soakDayLabel, _ := buildOCMLabel(newAusLabelKey("soak-days"), strconv.Itoa(policy.Conditions.SoakDays), subscriptionID, "")
+	soakDayLabel, _ := buildOCMLabel(SOAK_DAYS_LABEL_KEY, strconv.Itoa(policy.Conditions.SoakDays), subscriptionID, "")
 	labels = append(labels, soakDayLabel)
-	workloadsLabel, _ := buildOCMLabel(newAusLabelKey("workloads"), utils.StringArrayToCSV(policy.Workloads), subscriptionID, "")
+	workloadsLabel, _ := buildOCMLabel(WORKLOADS_LABEL_KEY, utils.StringArrayToCSV(policy.Workloads), subscriptionID, "")
 	labels = append(labels, workloadsLabel)
 	if policy.Conditions.Sector != "" {
-		sectorLabel, _ := buildOCMLabel(newAusLabelKey("sector"), policy.Conditions.Sector, subscriptionID, "")
+		sectorLabel, _ := buildOCMLabel(SECTOR_LABEL_KEY, policy.Conditions.Sector, subscriptionID, "")
 		labels = append(labels, sectorLabel)
 	}
-	scheduleLabel, _ := buildOCMLabel(newAusLabelKey("schedule"), policy.Schedule, subscriptionID, "")
+	scheduleLabel, _ := buildOCMLabel(SCHEDULE_LABEL_KEY, policy.Schedule, subscriptionID, "")
 	labels = append(labels, scheduleLabel)
 	if len(policy.Conditions.Mutexes) > 0 {
-		mutexesLabel, _ := buildOCMLabel(newAusLabelKey("mutexes"), utils.StringArrayToCSV(policy.Conditions.Mutexes), subscriptionID, "")
+		mutexesLabel, _ := buildOCMLabel(MUTEXES_LABEL_KEY, utils.StringArrayToCSV(policy.Conditions.Mutexes), subscriptionID, "")
 		labels = append(labels, mutexesLabel)
+	}
+	if len(policy.Conditions.BlockedVersions) > 0 {
+		blockedVersionsLabel, _ := buildOCMLabel(BLOCKED_VERSIONS_LABEL_KEY, utils.StringArrayToCSV(policy.Conditions.BlockedVersions), subscriptionID, "")
+		labels = append(labels, blockedVersionsLabel)
 	}
 	return labels, nil
 }
 
 func getPolicyForSubscription(subscription *amv1.Subscription, cluster *csv1.Cluster) (*policy.ClusterUpgradePolicy, error) {
-	labelsMap := newLabelMap(subscription.Labels())
+	labelsMap := newLabelMap(subscription.Labels(), SUPPORTED_POLICY_LABELS)
 	policy := policy.ClusterUpgradePolicy{
 		ClusterName: subscription.DisplayName(),
 	}
 
-	scheduleLabel, ok := labelsMap[newAusLabelKey("schedule")]
+	scheduleLabel, ok := labelsMap[SCHEDULE_LABEL_KEY]
 	if ok {
 		policy.Schedule = scheduleLabel.Value()
 	}
-	workloadsLabel, ok := labelsMap[newAusLabelKey("workloads")]
+	workloadsLabel, ok := labelsMap[WORKLOADS_LABEL_KEY]
 	if ok {
 		policy.Workloads = strings.Split(workloadsLabel.Value(), ",")
 	} else {
 		policy.Workloads = []string{}
 	}
-	mutexesLabel, ok := labelsMap[newAusLabelKey("mutexes")]
+	mutexesLabel, ok := labelsMap[MUTEXES_LABEL_KEY]
 	if ok {
 		policy.Conditions.Mutexes = strings.Split(mutexesLabel.Value(), ",")
 	} else {
 		policy.Conditions.Mutexes = []string{}
 	}
-	soakDaysLabel, ok := labelsMap[newAusLabelKey("soak-days")]
+	soakDaysLabel, ok := labelsMap[SOAK_DAYS_LABEL_KEY]
 	if ok {
 		soakDays, err := strconv.Atoi(soakDaysLabel.Value())
 		if err != nil {
@@ -189,9 +209,15 @@ func getPolicyForSubscription(subscription *amv1.Subscription, cluster *csv1.Clu
 		}
 		policy.Conditions.SoakDays = soakDays
 	}
-	sectorLabel, ok := labelsMap[newAusLabelKey("sector")]
+	sectorLabel, ok := labelsMap[SECTOR_LABEL_KEY]
 	if ok {
 		policy.Conditions.Sector = sectorLabel.Value()
+	}
+	blockedVersionsLabel, ok := labelsMap[BLOCKED_VERSIONS_LABEL_KEY]
+	if ok {
+		policy.Conditions.BlockedVersions = strings.Split(blockedVersionsLabel.Value(), ",")
+	} else {
+		policy.Conditions.BlockedVersions = []string{}
 	}
 	return &policy, nil
 }

@@ -20,8 +20,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
 	"sort"
 
+	"github.com/app-sre/aus-cli/pkg/blockedversions"
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 	csv1 "github.com/openshift-online/ocm-sdk-go/clustersmgmt/v1"
 )
@@ -32,6 +34,39 @@ type ClusterInfo struct {
 	Policy       *ClusterUpgradePolicy
 }
 
+func (c ClusterInfo) blockedVersionExpressions() ([]*regexp.Regexp, error) {
+	return blockedversions.ParsedBlockedVersionExpressions(c.Policy.Conditions.BlockedVersions)
+}
+
+func (c ClusterInfo) AvailableUpgrades(additionalBlockedVersions []*regexp.Regexp) []string {
+	var upgrades []string
+	clusterBlockedVersionExpressions, error := c.blockedVersionExpressions()
+	if error != nil {
+		return nil
+	}
+	for _, version := range c.Cluster.Version().AvailableUpgrades() {
+		// check if the version is blocked on the cluster
+		if isVersionBlocked(version, clusterBlockedVersionExpressions) {
+			continue
+		}
+		// check if the version is blocked by other blockers (e.g. org level blockers)
+		if isVersionBlocked(version, additionalBlockedVersions) {
+			continue
+		}
+		upgrades = append(upgrades, version)
+	}
+	return upgrades
+}
+
+func isVersionBlocked(version string, blockedVersions []*regexp.Regexp) bool {
+	for _, blockedVersion := range blockedVersions {
+		if blockedVersion.MatchString(version) {
+			return true
+		}
+	}
+	return false
+}
+
 type ClusterUpgradePolicy struct {
 	ClusterName string                         `json:"name"`
 	Schedule    string                         `json:"schedule"`
@@ -40,9 +75,10 @@ type ClusterUpgradePolicy struct {
 }
 
 type ClusterUpgradePolicyConditions struct {
-	SoakDays int      `json:"soak_days"`
-	Sector   string   `json:"sector,omitempty"`
-	Mutexes  []string `json:"mutexes,omitempty"`
+	SoakDays        int      `json:"soak_days"`
+	Sector          string   `json:"sector,omitempty"`
+	Mutexes         []string `json:"mutexes,omitempty"`
+	BlockedVersions []string `json:"blocked_versions,omitempty"`
 }
 
 func (p ClusterUpgradePolicy) Validate() error {
@@ -61,15 +97,16 @@ func (p ClusterUpgradePolicy) Validate() error {
 	return nil
 }
 
-func NewClusterUpgradePolicy(clusterName string, schedule string, workloads []string, soakDays int, sector string, mutexes []string) ClusterUpgradePolicy {
+func NewClusterUpgradePolicy(clusterName string, schedule string, workloads []string, soakDays int, sector string, mutexes []string, blockedVersions []string) ClusterUpgradePolicy {
 	return ClusterUpgradePolicy{
 		ClusterName: clusterName,
 		Schedule:    schedule,
 		Workloads:   workloads,
 		Conditions: ClusterUpgradePolicyConditions{
-			SoakDays: soakDays,
-			Sector:   sector,
-			Mutexes:  mutexes,
+			SoakDays:        soakDays,
+			Sector:          sector,
+			Mutexes:         mutexes,
+			BlockedVersions: blockedVersions,
 		},
 	}
 }

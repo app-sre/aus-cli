@@ -24,31 +24,61 @@ import (
 	"github.com/app-sre/aus-cli/pkg/arguments"
 	"github.com/app-sre/aus-cli/pkg/debug"
 	"github.com/app-sre/aus-cli/pkg/output"
+	"github.com/app-sre/aus-cli/pkg/utils"
 	"github.com/openshift-online/ocm-cli/pkg/dump"
 	sdk "github.com/openshift-online/ocm-sdk-go"
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 )
 
 type OCMLabelsContainer struct {
-	currentLabels map[string]*amv1.Label
-	desiredLabels map[string]*amv1.Label
+	supportedLabelKeys []string
+	currentLabels      map[string]*amv1.Label
+	desiredLabels      map[string]*amv1.Label
+}
+
+func LabelSupported(label *amv1.Label, supportedLabelKeys []string) bool {
+	if supportedLabelKeys == nil {
+		return true
+	}
+	return utils.StringInArray(supportedLabelKeys, label.Key())
 }
 
 func NewOCMLabelsContainer(currentLLabels []*amv1.Label) *OCMLabelsContainer {
 	return &OCMLabelsContainer{
-		currentLabels: newLabelMap(currentLLabels),
-		desiredLabels: make(map[string]*amv1.Label),
+		supportedLabelKeys: nil,
+		currentLabels:      newLabelMap(currentLLabels, nil),
+		desiredLabels:      make(map[string]*amv1.Label),
 	}
 }
 
-func (lc *OCMLabelsContainer) AddLabel(label *amv1.Label) {
-	lc.desiredLabels[label.Key()] = label
+func NewRestrictingOCMLabelsContainer(currentLLabels []*amv1.Label, supportedLabelKeys []string) *OCMLabelsContainer {
+	return &OCMLabelsContainer{
+		supportedLabelKeys: supportedLabelKeys,
+		currentLabels:      newLabelMap(currentLLabels, supportedLabelKeys),
+		desiredLabels:      make(map[string]*amv1.Label),
+	}
 }
 
-func (lc *OCMLabelsContainer) AddLabels(label []*amv1.Label) {
+func (lc *OCMLabelsContainer) LabelSupported(label *amv1.Label) bool {
+	return LabelSupported(label, lc.supportedLabelKeys)
+}
+
+func (lc *OCMLabelsContainer) AddLabel(label *amv1.Label) bool {
+	if lc.LabelSupported(label) {
+		lc.desiredLabels[label.Key()] = label
+		return true
+	}
+	return false
+}
+
+func (lc *OCMLabelsContainer) AddLabels(label []*amv1.Label) bool {
 	for _, l := range label {
-		lc.AddLabel(l)
+		ok := lc.AddLabel(l)
+		if !ok {
+			return false
+		}
 	}
+	return true
 }
 
 func (lc *OCMLabelsContainer) Reconcile(dryRun bool, connection *sdk.Connection) error {
@@ -127,10 +157,12 @@ func deleteSubscriptionLabels(subscriptionId string, keyPrefix string, connectio
 	return nil
 }
 
-func newLabelMap(labels []*amv1.Label) map[string]*amv1.Label {
+func newLabelMap(labels []*amv1.Label, supportedLabelKeys []string) map[string]*amv1.Label {
 	labelMap := make(map[string]*amv1.Label)
 	for _, label := range labels {
-		labelMap[label.Key()] = label
+		if LabelSupported(label, supportedLabelKeys) {
+			labelMap[label.Key()] = label
+		}
 	}
 	return labelMap
 }
