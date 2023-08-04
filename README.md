@@ -38,17 +38,18 @@ Once logged in, the plug-in can be accessed by running `ocm aus` which will disp
 
 Create a new cluster upgrade policy with `ocm aus apply policies [flags] [args]`
 
-| Flag           | Definition                                                                                                                                         |
-|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| --cluster-name | Name of the cluster to manage a policy for. This name needs to match the cluster name in OCM.                                                      |
-| --org-id       | The OCM organization ID the cluster lives in. Defaults to the organization ID of the currently logged in user.                                     |
-| --schedule     | A cron expression that defines when the cluster should be upgraded or a schedule preset (weekdays, anytime)                                        |
-| --workload     | An identifier for the workload that runs on the cluster. Soak days are calculated per workload. Can be specified multiple times.                   |
-| --soak-days    | The number of days to wait before upgrading the cluster. Soak days are accumulated per version and workload within on organization. Defaults to 0. |
-| --mutex        | The mutexs the cluster must hold before it can start an upgrade. Can be specified multiple times.                                                  |
-| --sector       | The sector the cluster belongs to. Can be used to gate cluster upgrades between sets of clusters.                                                  |
-| --dry-run      | Test the command without taking any action.                                                                                                        |
-| --dump         | Instead of applying the policy to the cluster, it is written to stdout in JSON format                                                              |
+| Flag               | Definition                                                                                                                                         |
+|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| --cluster-name     | Name of the cluster to manage a policy for. This name needs to match the cluster name in OCM.                                                      |
+| --org-id           | The OCM organization ID the cluster lives in. Defaults to the organization ID of the currently logged in user.                                     |
+| --schedule         | A cron expression that defines when the cluster should be upgraded or a schedule preset (weekdays, anytime)                                        |
+| --workload         | An identifier for the workload that runs on the cluster. Soak days are calculated per workload. Can be specified multiple times.                   |
+| --soak-days        | The number of days to wait before upgrading the cluster. Soak days are accumulated per version and workload within on organization. Defaults to 0. |
+| --mutex            | The mutexs the cluster must hold before it can start an upgrade. Can be specified multiple times.                                                  |
+| --sector           | The sector the cluster belongs to. Can be used to gate cluster upgrades between sets of clusters.                                                  |
+| --blocked-versions | Blocked version expressions                                                                                                                        |
+| --dry-run          | Test the command without taking any action.                                                                                                        |
+| --dump             | Instead of applying the policy to the cluster, it is written to stdout in JSON format                                                              |
 
 Policies can also be written to a file and applied from a file.
 
