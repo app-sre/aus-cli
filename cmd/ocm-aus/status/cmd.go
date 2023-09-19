@@ -74,7 +74,7 @@ func run(cmd *cobra.Command, argv []string) error {
 	if err != nil {
 		return err
 	}
-	organization, clusters, blockedVersions, sectors, err := be.Status(args.organizationId, args.showAllClusters)
+	organization, clusters, blockedVersions, sectors, inheritance, err := be.Status(args.organizationId, args.showAllClusters)
 	if err != nil {
 		return err
 	}
@@ -91,6 +91,12 @@ func run(cmd *cobra.Command, argv []string) error {
 		w.WriteString("Organization name:\t%s\n", organization.Name())
 		w.WriteString("OCM environment:\t%s\n", connection.URL())
 		output.PrintListMultiline(w, "Blocked Versions", blockedVersions)
+		if len(inheritance.InheritingFromOrgs) > 0 {
+			w.WriteString("Inherit version data:\t%s\n", strings.Join(inheritance.InheritingFromOrgs, ", "))
+		}
+		if len(inheritance.PublishingToOrgs) > 0 {
+			w.WriteString("Publish version data:\t%s\n", strings.Join(inheritance.PublishingToOrgs, ", "))
+		}
 
 		w.WriteString("Sector Configuration:\t(%d in total)\n", len(sectors))
 		if len(sectors) > 0 {

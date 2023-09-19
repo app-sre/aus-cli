@@ -18,6 +18,7 @@ package apply
 
 import (
 	"github.com/app-sre/aus-cli/cmd/ocm-aus/apply/blockedversions"
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/apply/inheritance"
 	"github.com/app-sre/aus-cli/cmd/ocm-aus/apply/policy"
 	"github.com/app-sre/aus-cli/cmd/ocm-aus/apply/sector"
 	"github.com/spf13/cobra"
@@ -37,4 +38,5 @@ func init() {
 	Cmd.AddCommand(policy.Cmd)
 	Cmd.AddCommand(sector.Cmd)
 	Cmd.AddCommand(blockedversions.Cmd)
+	Cmd.AddCommand(inheritance.Cmd)
 }

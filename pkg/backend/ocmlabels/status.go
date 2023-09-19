@@ -20,10 +20,11 @@ import (
 	"github.com/app-sre/aus-cli/pkg/ocm"
 	"github.com/app-sre/aus-cli/pkg/policy"
 	"github.com/app-sre/aus-cli/pkg/sectors"
+	"github.com/app-sre/aus-cli/pkg/versiondata"
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 )
 
-func (f *OCMLabelsPolicyBackend) Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusters []policy.ClusterInfo, blockedVersions []string, sectors []sectors.SectorDependencies, err error) {
+func (f *OCMLabelsPolicyBackend) Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusters []policy.ClusterInfo, blockedVersions []string, sectors []sectors.SectorDependencies, inheritance versiondata.VersionDataInheritanceConfig, err error) {
 	connection, err := ocm.NewOCMConnection()
 	if err != nil {
 		return
@@ -47,5 +48,9 @@ func (f *OCMLabelsPolicyBackend) Status(organizationId string, showClustersWitho
 	}
 	policy.SortClusters(clusters)
 	sectors, err = listSectorConfigurationFromOrganizationLabels(organization.ID(), connection)
+	if err != nil {
+		return
+	}
+	inheritance, err = listVersionDataInheritanceConfiguration(organization.ID(), connection)
 	return
 }
