@@ -110,7 +110,7 @@ cat version-blocks.json | ocm aus apply version-blocks - --replace
 Apply blocked versions to organization 2Q0awarcxlarxaWwrFFpbLITiGu
 ```
 
-Together with the `--replace-versions` option, applying from a file makes sure that the desired state defined in the file is going to be the exact state on the organization.
+Together with the `--replace` option, applying from a file makes sure that the desired state defined in the file is going to be the exact state on the organization.
 
 ## Manage sector dependencies
 
@@ -170,7 +170,53 @@ cat sector-deps.json | ocm aus apply sectors - --replace
 Apply sector configuration to organization 2Q0awarcxlarxaWwrFFpbLITiGu
 ```
 
-Together with the `--replace-sector-deps` option, applying from a file makes sure that the desired state defined in the file is going to be the exact state on the organization.
+Together with the `--replace` option, applying from a file makes sure that the desired state defined in the file is going to be the exact state on the organization.
+
+## Manage cross-organization soak day inheritance
+
+Accumulated soak days can be inherited from other OCM organizations. This can be meaningful if a fleet of clusters is distributed accross various organizations or if organizations are used for different stages of continous delivery (integration, stage, prod). The involved organization can even exist in different OCM environment (integration, stage, prod).
+
+Manage blocked versions with `ocm aus apply inheritance [fags]`
+
+| Flags              | Definition                                                                                                                                                            |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --inherit-from     | A comma-separated list of organization IDs to inherit version data from. The listed organizations need to define a matching publish-to entry in their configuration.  |
+| --publish-to       | A comma-separated list of organization IDs to publish version data to. The listed organizations need to define a matching inherit-from entry in their configuration.  |
+| --replace          | Replaced the inheritance configuration on the organization with the provided configuration instead of ammending to the configuration.                                 |
+| --org-id           | The OCM organization ID where the inheritance configuration is managed. Defaults to the organization ID of the currently logged in user.                              |
+
+Setting up a publish/inherit relationship between organizations is a 2-step process because the involved organizations might belong to different teams:
+
+* first declare publishing from a source organization to a target organization
+* then declare inheritance on the target organization from the source organization. If a valid publish/inherit relationship
+
+This ensures that both sides agree about this relationship. If a declared inheritance is not matched by a declared publish, AUS will stop scheduling updates in the inheriting organization and service logs will be published on all affected clusters to make their owners aware.
+
+```shell
+ocm login # ... into to source organization
+ocm aus apply inheritance -p $target_org_id
+ocm login # ... into the target organization
+ocm aus apply inheritance -i $source_org_id
+
+ocm aus status
+
+Organization ID:       $target_org_id
+Organization name:     ---
+OCM environment:       https://api.openshift.com
+Inherit version data:  $source_org_id
+```
+
+Inheritance configuration can also be written to a file and applied from a file.
+
+```shell
+ocm aus apply inheritance -i $source_org_id --replace --dump | tee inheritance.json
+{"inherit":["$source_org_id"]}
+
+cat inheritance.json | ocm aus apply inheritance - --replace
+Apply version data inheritance configuration to organization $target_org_id
+```
+
+Together with the `--replace` option, applying from a file makes sure that the desired state defined in the file is going to be the exact state on the organization.
 
 ## Example
 
@@ -273,4 +319,3 @@ Clusters:  (4 in total)
   prod-1                   true         * * * * 1-4  prod    prod-mutex   5          my-service
   prod-2                   true         * * * * 1-4  prod    prod-mutex   5          my-service
 ```
-
