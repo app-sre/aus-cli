@@ -22,6 +22,7 @@ import (
 	"github.com/app-sre/aus-cli/pkg/backend/ocmlabels"
 	"github.com/app-sre/aus-cli/pkg/policy"
 	"github.com/app-sre/aus-cli/pkg/sectors"
+	"github.com/app-sre/aus-cli/pkg/versiondata"
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 )
 
@@ -40,7 +41,11 @@ type PolicyBackend interface {
 
 	ApplySectorConfiguration(organizationId string, sectorDependencies []sectors.SectorDependencies, dumpSectorDeps bool, dryRun bool) error
 
-	Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusters []policy.ClusterInfo, blockedVersions []string, sectors []sectors.SectorDependencies, err error)
+	GetVersionDataInheritanceConfiguration(organizationId string) (versiondata.VersionDataInheritanceConfig, error)
+
+	ApplyVersionDataInheritanceConfiguration(organizationId string, inheritance versiondata.VersionDataInheritanceConfig, dumpConfig bool, dryRun bool) error
+
+	Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusters []policy.ClusterInfo, blockedVersions []string, sectors []sectors.SectorDependencies, inheritance versiondata.VersionDataInheritanceConfig, err error)
 }
 
 func NewPolicyBackend(backendType string) (PolicyBackend, error) {
