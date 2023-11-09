@@ -18,6 +18,7 @@ package get
 
 import (
 	"github.com/app-sre/aus-cli/cmd/ocm-aus/get/blockedversions"
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/get/gates"
 	"github.com/app-sre/aus-cli/cmd/ocm-aus/get/policy"
 	"github.com/app-sre/aus-cli/cmd/ocm-aus/get/sector"
 	"github.com/spf13/cobra"
@@ -37,4 +38,5 @@ func init() {
 	Cmd.AddCommand(policy.Cmd)
 	Cmd.AddCommand(sector.Cmd)
 	Cmd.AddCommand(blockedversions.Cmd)
+	Cmd.AddCommand(gates.Cmd)
 }

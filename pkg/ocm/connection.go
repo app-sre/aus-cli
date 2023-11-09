@@ -21,7 +21,6 @@ import (
 
 	"github.com/openshift-online/ocm-cli/pkg/config"
 	sdk "github.com/openshift-online/ocm-sdk-go"
-	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 )
 
 func NewOCMConnection() (*sdk.Connection, error) {
@@ -50,35 +49,4 @@ func NewOCMConnection() (*sdk.Connection, error) {
 	}
 
 	return connection, nil
-}
-
-func Whoami(connection *sdk.Connection) (*amv1.Account, error) {
-	response, err := connection.AccountsMgmt().V1().CurrentAccount().Get().Send()
-	if err != nil {
-		return nil, err
-	}
-	return response.Body(), nil
-}
-
-func CurrentOrganizationId(connection *sdk.Connection) (string, error) {
-	account, err := Whoami(connection)
-	if err != nil {
-		return "", err
-	}
-	return account.Organization().ID(), nil
-}
-
-func GetOrganization(organizationId string, connection *sdk.Connection) (*amv1.Organization, error) {
-	var err error
-	if organizationId == "" {
-		organizationId, err = CurrentOrganizationId(connection)
-		if err != nil {
-			return nil, err
-		}
-	}
-	response, err := connection.AccountsMgmt().V1().Organizations().Organization(organizationId).Get().Send()
-	if err != nil {
-		return nil, err
-	}
-	return response.Body(), nil
 }

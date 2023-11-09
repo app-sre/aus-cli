@@ -22,9 +22,9 @@ import (
 	"strings"
 
 	"github.com/app-sre/aus-cli/pkg/backend"
-	"github.com/app-sre/aus-cli/pkg/blockedversions"
 	"github.com/app-sre/aus-cli/pkg/ocm"
 	"github.com/app-sre/aus-cli/pkg/output"
+	"github.com/app-sre/aus-cli/pkg/versions"
 	"github.com/spf13/cobra"
 )
 
@@ -78,7 +78,7 @@ func run(cmd *cobra.Command, argv []string) error {
 	if err != nil {
 		return err
 	}
-	blockedVersionExpressions, err := blockedversions.ParsedBlockedVersionExpressions(blockedVersions)
+	blockedVersionExpressions, err := versions.ParsedBlockedVersionExpressions(blockedVersions)
 	if err != nil {
 		return err
 	}
@@ -109,8 +109,8 @@ func run(cmd *cobra.Command, argv []string) error {
 
 		w.WriteString("Clusters:\t(%d in total)\n", len(clusters))
 		if len(clusters) > 0 {
-			w1.WriteString("Cluster Name\tProduct\tVersion\tChannel\tAUS enabled\tSchedule\tSector\tMutexes\tSoak Days\tWorkloads\tBlocked Versions\tAvailable Upgrades\n")
-			w1.WriteString("------------\t-------\t-------\t-------\t-----------\t--------\t------\t-------\t---------\t---------\t----------------\t------------------\n")
+			w1.WriteString("Cluster Name\tProduct\tVersion\tChannel\tSchedule\tSector\tMutexes\tSoak Days\tWorkloads\tBlocked Versions\tAvailable Upgrades\n")
+			w1.WriteString("------------\t-------\t-------\t-------\t--------\t------\t-------\t---------\t---------\t----------------\t------------------\n")
 			for _, cluster := range clusters {
 				mutexes := "<none>"
 				sector := "<none>"
@@ -121,34 +121,32 @@ func run(cmd *cobra.Command, argv []string) error {
 					if cluster.Policy.Conditions.Sector != "" {
 						sector = cluster.Policy.Conditions.Sector
 					}
-					w1.WriteString("%s\t%s\t%s\t%s\t%t\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
+					w1.WriteString("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
 						cluster.Cluster.Name(),
 						cluster.Cluster.Product().ID(),
 						cluster.Cluster.Version().RawID(),
 						cluster.Cluster.Version().ChannelGroup(),
-						true,
 						cluster.Policy.Schedule,
 						sector,
 						mutexes,
 						cluster.Policy.Conditions.SoakDays,
 						strings.Join(cluster.Policy.Workloads, ", "),
 						strings.Join(cluster.Policy.Conditions.BlockedVersions, ", "),
-						strings.Join(cluster.AvailableUpgrades(blockedVersionExpressions), ", "),
+						strings.Join(cluster.AvailableUpgrades(false, blockedVersionExpressions), ", "),
 					)
 				} else {
-					w1.WriteString("%s\t%s\t%s\t%s\t%t\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+					w1.WriteString("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 						cluster.Cluster.Name(),
 						cluster.Cluster.Product().ID(),
 						cluster.Cluster.Version().RawID(),
 						cluster.Cluster.Version().ChannelGroup(),
-						false,
 						"<none>",
 						sector,
 						mutexes,
 						"<none>",
 						"<none>",
 						strings.Join(cluster.Policy.Conditions.BlockedVersions, ", "),
-						strings.Join(cluster.AvailableUpgrades(blockedVersionExpressions), ", "),
+						strings.Join(cluster.AvailableUpgrades(false, blockedVersionExpressions), ", "),
 					)
 				}
 			}

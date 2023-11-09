@@ -20,52 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"regexp"
 	"sort"
-
-	"github.com/app-sre/aus-cli/pkg/blockedversions"
-	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
-	csv1 "github.com/openshift-online/ocm-sdk-go/clustersmgmt/v1"
 )
-
-type ClusterInfo struct {
-	Subscription *amv1.Subscription
-	Cluster      *csv1.Cluster
-	Policy       *ClusterUpgradePolicy
-}
-
-func (c ClusterInfo) blockedVersionExpressions() ([]*regexp.Regexp, error) {
-	return blockedversions.ParsedBlockedVersionExpressions(c.Policy.Conditions.BlockedVersions)
-}
-
-func (c ClusterInfo) AvailableUpgrades(additionalBlockedVersions []*regexp.Regexp) []string {
-	var upgrades []string
-	clusterBlockedVersionExpressions, error := c.blockedVersionExpressions()
-	if error != nil {
-		return nil
-	}
-	for _, version := range c.Cluster.Version().AvailableUpgrades() {
-		// check if the version is blocked on the cluster
-		if isVersionBlocked(version, clusterBlockedVersionExpressions) {
-			continue
-		}
-		// check if the version is blocked by other blockers (e.g. org level blockers)
-		if isVersionBlocked(version, additionalBlockedVersions) {
-			continue
-		}
-		upgrades = append(upgrades, version)
-	}
-	return upgrades
-}
-
-func isVersionBlocked(version string, blockedVersions []*regexp.Regexp) bool {
-	for _, blockedVersion := range blockedVersions {
-		if blockedVersion.MatchString(version) {
-			return true
-		}
-	}
-	return false
-}
 
 type ClusterUpgradePolicy struct {
 	ClusterName string                         `json:"name"`
@@ -120,11 +76,5 @@ func NewClusterUpgradePolicyFromReader(reader io.Reader) ([]ClusterUpgradePolicy
 func SortPolicies(policies []ClusterUpgradePolicy) {
 	sort.Slice(policies, func(i, j int) bool {
 		return policies[i].ClusterName < policies[j].ClusterName
-	})
-}
-
-func SortClusters(clusters []ClusterInfo) {
-	sort.Slice(clusters, func(i, j int) bool {
-		return clusters[i].Cluster.Name() < clusters[j].Cluster.Name()
 	})
 }

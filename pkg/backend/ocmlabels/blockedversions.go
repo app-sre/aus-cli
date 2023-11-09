@@ -21,10 +21,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/app-sre/aus-cli/pkg/blockedversions"
 	"github.com/app-sre/aus-cli/pkg/ocm"
 	"github.com/app-sre/aus-cli/pkg/output"
 	"github.com/app-sre/aus-cli/pkg/utils"
+	"github.com/app-sre/aus-cli/pkg/versions"
 	sdk "github.com/openshift-online/ocm-sdk-go"
 )
 
@@ -89,5 +89,5 @@ func getBlockedVersionsForOrganization(organizationId string, connection *sdk.Co
 	if label == nil {
 		return []string{}, nil
 	}
-	return blockedversions.SortVersionExpressions(strings.Split(label.Value(), ",")), nil
+	return versions.SortVersionExpressions(strings.Split(label.Value(), ",")), nil
 }

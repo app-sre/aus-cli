@@ -3,6 +3,7 @@ module github.com/app-sre/aus-cli
 go 1.18
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/nwidger/jsoncolor v0.3.1
 	github.com/openshift-online/ocm-cli v0.1.66
 	github.com/openshift-online/ocm-sdk-go v0.1.338

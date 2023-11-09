@@ -18,6 +18,7 @@ package apply
 
 import (
 	"github.com/app-sre/aus-cli/cmd/ocm-aus/apply/blockedversions"
+	"github.com/app-sre/aus-cli/cmd/ocm-aus/apply/gateagreement"
 	"github.com/app-sre/aus-cli/cmd/ocm-aus/apply/inheritance"
 	"github.com/app-sre/aus-cli/cmd/ocm-aus/apply/policy"
 	"github.com/app-sre/aus-cli/cmd/ocm-aus/apply/sector"
@@ -39,4 +40,5 @@ func init() {
 	Cmd.AddCommand(sector.Cmd)
 	Cmd.AddCommand(blockedversions.Cmd)
 	Cmd.AddCommand(inheritance.Cmd)
+	Cmd.AddCommand(gateagreement.Cmd)
 }

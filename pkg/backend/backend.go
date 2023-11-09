@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/app-sre/aus-cli/pkg/backend/ocmlabels"
+	"github.com/app-sre/aus-cli/pkg/clusters"
 	"github.com/app-sre/aus-cli/pkg/policy"
 	"github.com/app-sre/aus-cli/pkg/sectors"
 	"github.com/app-sre/aus-cli/pkg/versiondata"
@@ -27,7 +28,7 @@ import (
 )
 
 type PolicyBackend interface {
-	ListPolicies(organizationId string, showClustersWithoutPolicy bool) (map[string]*policy.ClusterInfo, error)
+	ListPolicies(organizationId string, showClustersWithoutPolicy bool) (map[string]*clusters.ClusterInfo, error)
 
 	ApplyPolicies(organizationId string, policies []policy.ClusterUpgradePolicy, dumpPolicy bool, dryRun bool) error
 
@@ -45,7 +46,7 @@ type PolicyBackend interface {
 
 	ApplyVersionDataInheritanceConfiguration(organizationId string, inheritance versiondata.VersionDataInheritanceConfig, dumpConfig bool, dryRun bool) error
 
-	Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusters []policy.ClusterInfo, blockedVersions []string, sectors []sectors.SectorDependencies, inheritance versiondata.VersionDataInheritanceConfig, err error)
+	Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusterInfos []*clusters.ClusterInfo, blockedVersions []string, sectors []sectors.SectorDependencies, inheritance versiondata.VersionDataInheritanceConfig, err error)
 }
 
 func NewPolicyBackend(backendType string) (PolicyBackend, error) {
