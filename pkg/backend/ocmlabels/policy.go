@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/app-sre/aus-cli/pkg/clusters"
 	"github.com/app-sre/aus-cli/pkg/ocm"
 	"github.com/app-sre/aus-cli/pkg/output"
 	"github.com/app-sre/aus-cli/pkg/policy"
@@ -47,7 +48,7 @@ var SUPPORTED_POLICY_LABELS = []string{
 	BLOCKED_VERSIONS_LABEL_KEY,
 }
 
-func (f *OCMLabelsPolicyBackend) ListPolicies(organizationId string, showClustersWithoutPolicy bool) (map[string]*policy.ClusterInfo, error) {
+func (f *OCMLabelsPolicyBackend) ListPolicies(organizationId string, showClustersWithoutPolicy bool) (map[string]*clusters.ClusterInfo, error) {
 	connection, err := ocm.NewOCMConnection()
 	if err != nil {
 		return nil, err
@@ -75,7 +76,7 @@ func (f *OCMLabelsPolicyBackend) DeletePolicy(organizationId string, clusterName
 		}
 	}
 
-	subscription, err := getSubscriptionForDisplayName(organizationId, clusterName, connection)
+	subscription, err := ocm.SubscriptionForDisplayName(organizationId, clusterName, connection)
 	if err != nil {
 		return err
 	}
@@ -118,7 +119,7 @@ func (f *OCMLabelsPolicyBackend) ApplyPolicies(organizationId string, policies [
 }
 
 func (f *OCMLabelsPolicyBackend) applyPolicy(organizationId string, policy policy.ClusterUpgradePolicy, connection *sdk.Connection, dryRun bool) error {
-	subscription, err := getSubscriptionForDisplayName(organizationId, policy.ClusterName, connection)
+	subscription, err := ocm.SubscriptionForDisplayName(organizationId, policy.ClusterName, connection)
 	if err != nil {
 		return err
 	}
@@ -142,9 +143,9 @@ func (f *OCMLabelsPolicyBackend) applyPolicy(organizationId string, policy polic
 	return labelsContainer.Reconcile(dryRun, connection)
 }
 
-func listPoliciesInOrganization(organizationId string, showClustersWithoutPolicy bool, connection *sdk.Connection) (map[string]*policy.ClusterInfo, error) {
-	cluster_map := make(map[string]*policy.ClusterInfo)
-	clusterInfos, err := clusterInfos(organizationId, "", connection)
+func listPoliciesInOrganization(organizationId string, showClustersWithoutPolicy bool, connection *sdk.Connection) (map[string]*clusters.ClusterInfo, error) {
+	cluster_map := make(map[string]*clusters.ClusterInfo)
+	clusterInfos, err := getClusterInfos(organizationId, "", connection)
 	if err != nil {
 		return nil, err
 	}

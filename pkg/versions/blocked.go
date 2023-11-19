@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package blockedversions
+package versions
 
 import (
 	"encoding/json"
 	"io"
 	"regexp"
 	"sort"
+	"strings"
 )
 
 type BlockedVersionUpdateMode int64
@@ -43,14 +44,20 @@ func ReadVersionExpressionsFromReader(reader io.Reader) ([]string, error) {
 
 func ConsolidateVersionBlocks(currentVersionBlocks []string, toBlock []string, toUnblock []string) []string {
 	stringMap := make(map[string]bool)
-	for _, s := range currentVersionBlocks {
-		stringMap[s] = true
+	for _, version := range currentVersionBlocks {
+		if normalizedVersion, ok := normalizeVersionBlock(version); ok {
+			stringMap[normalizedVersion] = true
+		}
 	}
-	for _, s := range toBlock {
-		stringMap[s] = true
+	for _, version := range toBlock {
+		if normalizedVersion, ok := normalizeVersionBlock(version); ok {
+			stringMap[normalizedVersion] = true
+		}
 	}
-	for _, s := range toUnblock {
-		delete(stringMap, s)
+	for _, version := range toUnblock {
+		if normalizedVersion, ok := normalizeVersionBlock(version); ok {
+			delete(stringMap, normalizedVersion)
+		}
 	}
 
 	result := []string{}
@@ -71,4 +78,21 @@ func ParsedBlockedVersionExpressions(blockedVersions []string) ([]*regexp.Regexp
 		blockedVersionExpressions = append(blockedVersionExpressions, blockedVersionExpression)
 	}
 	return blockedVersionExpressions, nil
+}
+
+func IsVersionBlocked(version string, blockedVersions []*regexp.Regexp) bool {
+	for _, blockedVersion := range blockedVersions {
+		if blockedVersion.MatchString(version) {
+			return true
+		}
+	}
+	return false
+}
+
+func normalizeVersionBlock(version string) (string, bool) {
+	normalized := strings.Trim(version, " ,")
+	if normalized == "" {
+		return "", false
+	}
+	return normalized, true
 }

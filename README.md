@@ -218,6 +218,28 @@ Apply version data inheritance configuration to organization $target_org_id
 
 Together with the `--replace` option, applying from a file makes sure that the desired state defined in the file is going to be the exact state on the organization.
 
+## Version gates
+
+OCM offers the concepts of version gates, protecting a cluster from upgrading to the next minor version when it is not ready for that yet.
+The AUS CLI offers commands to list such version gates and accept them. This is something that needs to be done manually on every minor version upgrade.
+
+List the version gates that need attention with `ocm aus get gates`
+
+```shell
+ocm aus get gates
+...
+Unacknowledged version gates:
+  Cluster Name  Current Version  Gated version  Gate Description  Gate ID                               Documentation
+  ------------  ---------------  -------------  ----------------  -------                               -------------
+  cluster-1     4.13.21          4.14           ...               273f0652-5ca5-11ee-a98c-0a580a82061c  https://access.redhat.com/solutions/6808671
+```
+
+Follow the instructions for each version gate and once a clustes is ready for minor upgrade, agree that the gates requirements are fulfilled.
+
+```shell
+ocm aus apply gate-agreement --cluster-name cluster-1 --version 4.14
+```
+
 ## Example
 
 We will create policies for two stage and two production clusters. We want them to upgrade as follows:

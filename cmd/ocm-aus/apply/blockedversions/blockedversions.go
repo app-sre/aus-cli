@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	"github.com/app-sre/aus-cli/pkg/backend"
-	"github.com/app-sre/aus-cli/pkg/blockedversions"
+	"github.com/app-sre/aus-cli/pkg/versions"
 	"github.com/spf13/cobra"
 )
 
@@ -103,7 +103,7 @@ func run(cmd *cobra.Command, argv []string) error {
 
 	var blocking, unblocking []string
 	if len(argv) > 0 && argv[0] == "-" {
-		blocking, err = blockedversions.ReadVersionExpressionsFromReader(cmd.InOrStdin())
+		blocking, err = versions.ReadVersionExpressionsFromReader(cmd.InOrStdin())
 		if err != nil {
 			return fmt.Errorf("failed to decode input: %v", err)
 		}
@@ -123,6 +123,6 @@ func run(cmd *cobra.Command, argv []string) error {
 			return err
 		}
 	}
-	blockExpressions := blockedversions.ConsolidateVersionBlocks(currentVersionBlocks, blocking, unblocking)
+	blockExpressions := versions.ConsolidateVersionBlocks(currentVersionBlocks, blocking, unblocking)
 	return be.ApplyBlockedVersionExpressions(args.organizationId, blockExpressions, args.dump, args.dryRun)
 }
