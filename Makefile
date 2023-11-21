@@ -15,8 +15,8 @@ endif
 # Disable CGO so that we always generate static binaries:
 export CGO_ENABLED=0
 
-# Allow overriding: `make lint container_runner=docker`.
-container_runner ?= $(shell which podman >/dev/null 2>&1 && echo podman || echo docker)
+# Allow overriding: `make lint CONTAINER_ENGINE=docker`.
+CONTAINER_ENGINE ?= $(shell which podman >/dev/null 2>&1 && echo podman || echo docker)
 
 
 .PHONY: all
@@ -28,7 +28,7 @@ build:
 
 .PHONY: release
 release:
-	$(container_runner) run --rm -v "$(PWD):/app" -u $(id -u ${USER}):$(id -g ${USER}) -e GITHUB_TOKEN=$(GITHUB_TOKEN) --workdir=/app ghcr.io/goreleaser/goreleaser:v1.18.2 release
+	@$(CONTAINER_ENGINE) run --rm -v "$(PWD):/app" -u $(id -u ${USER}):$(id -g ${USER}) -e GITHUB_TOKEN=$(GITHUB_TOKEN) --workdir=/app ghcr.io/goreleaser/goreleaser:v1.18.2 release
 
 .PHONY: test
 test: build
@@ -40,16 +40,16 @@ fmt:
 
 .PHONY: image-image
 build-image:
-	$(container_runner) build -t quay.io/app-sre/ocm-aus-cli:latest .
+	@$(CONTAINER_ENGINE) --config=$(DOCKER_CONF) build -t quay.io/app-sre/ocm-aus-cli:latest . --progress=plain
 
 .PHONY: image-push
 push-image: build-image
-	$(container_runner) --config=$(DOCKER_CONF) push $(IMAGE_NAME):latest
-	$(container_runner) tag $(IMAGE_NAME):latest $(IMAGE_NAME):$(IMAGE_TAG)
-	$(container_runner) --config=$(DOCKER_CONF) push $(IMAGE_NAME):$(IMAGE_TAG)
+	@$(CONTAINER_ENGINE) --config=$(DOCKER_CONF) push $(IMAGE_NAME):latest
+	@$(CONTAINER_ENGINE) tag $(IMAGE_NAME):latest $(IMAGE_NAME):$(IMAGE_TAG)
+	@$(CONTAINER_ENGINE) --config=$(DOCKER_CONF) push $(IMAGE_NAME):$(IMAGE_TAG)
 
 .PHONY: lint
 lint:
-	$(container_runner) run --rm -w app -v "$(PWD):/app" --workdir=/app \
+	@$(CONTAINER_ENGINE) run --rm -w app -v "$(PWD):/app" --workdir=/app \
 		quay.io/app-sre/golangci-lint:v$(shell cat .golangciversion) \
 		golangci-lint run --timeout 15m
