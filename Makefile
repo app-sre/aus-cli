@@ -2,8 +2,15 @@
 export GO111MODULE=on
 export GOPROXY=https://proxy.golang.org
 
+# Docker setup
 IMAGE_NAME := quay.io/app-sre/ocm-aus-cli
 IMAGE_TAG := $(shell git rev-parse --short=7 HEAD)
+
+ifneq (,$(wildcard $(CURDIR)/.docker))
+	DOCKER_CONF := $(CURDIR)/.docker
+else
+	DOCKER_CONF := $(HOME)/.docker
+endif
 
 # Disable CGO so that we always generate static binaries:
 export CGO_ENABLED=0
