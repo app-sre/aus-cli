@@ -2,6 +2,9 @@
 export GO111MODULE=on
 export GOPROXY=https://proxy.golang.org
 
+IMAGE_NAME := quay.io/app-sre/ocm-aus-cli
+IMAGE_TAG := $(shell git rev-parse --short=7 HEAD)
+
 # Disable CGO so that we always generate static binaries:
 export CGO_ENABLED=0
 
@@ -14,7 +17,7 @@ all: build
 
 .PHONY: build
 build:
-	go build ./cmd/ocm-aus
+	go build -ldflags "-X github.com/app-sre/aus-cli/cmd/ocm-aus/version.Version=`git describe --tags --abbrev=0` -X github.com/app-sre/aus-cli/cmd/ocm-aus/version.Commit=`git rev-parse HEAD`" ./cmd/ocm-aus
 
 .PHONY: release
 release:
@@ -27,6 +30,16 @@ test: build
 .PHONY: fmt
 fmt:
 	gofmt -s -l -w cmd pkg
+
+.PHONY: image-image
+build-image:
+	$(container_runner) build -t quay.io/app-sre/ocm-aus-cli:latest .
+
+.PHONY: image-push
+push-image: build-image
+	$(container_runner) --config=$(DOCKER_CONF) push $(IMAGE_NAME):latest
+	$(container_runner) tag $(IMAGE_NAME):latest $(IMAGE_NAME):$(IMAGE_TAG)
+	$(container_runner) --config=$(DOCKER_CONF) push $(IMAGE_NAME):$(IMAGE_TAG)
 
 .PHONY: lint
 lint:
