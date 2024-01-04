@@ -112,6 +112,8 @@ Apply blocked versions to organization 2Q0awarcxlarxaWwrFFpbLITiGu
 
 Together with the `--replace` option, applying from a file makes sure that the desired state defined in the file is going to be the exact state on the organization.
 
+When `--dump` is used without the `--replace` option, one needs to be logged in to OCM.
+
 ## Manage sector dependencies
 
 Sectors are dependant groups of clusters. A version is only considered for upgrade within a sector if all dependant sectors have been fully upgraded to to that version.
@@ -172,6 +174,8 @@ Apply sector configuration to organization 2Q0awarcxlarxaWwrFFpbLITiGu
 
 Together with the `--replace` option, applying from a file makes sure that the desired state defined in the file is going to be the exact state on the organization.
 
+When `--dump` is used without the `--replace` option, one needs to be logged in to OCM.
+
 ## Manage cross-organization soak day inheritance
 
 Accumulated soak days can be inherited from other OCM organizations. This can be meaningful if a fleet of clusters is distributed accross various organizations or if organizations are used for different stages of continous delivery (integration, stage, prod). The involved organization can even exist in different OCM environment (integration, stage, prod).
@@ -217,6 +221,8 @@ Apply version data inheritance configuration to organization $target_org_id
 ```
 
 Together with the `--replace` option, applying from a file makes sure that the desired state defined in the file is going to be the exact state on the organization.
+
+When `--dump` is used without the `--replace` option, one needs to be logged in to OCM.
 
 ## Version gates
 
