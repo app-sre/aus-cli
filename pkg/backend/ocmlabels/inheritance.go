@@ -47,18 +47,6 @@ func (f *OCMLabelsPolicyBackend) GetVersionDataInheritanceConfiguration(organiza
 }
 
 func (f *OCMLabelsPolicyBackend) ApplyVersionDataInheritanceConfiguration(organizationId string, inheritance versiondata.VersionDataInheritanceConfig, dumpConfig bool, dryRun bool) error {
-	connection, err := ocm.NewOCMConnection()
-	if err != nil {
-		return err
-	}
-
-	if organizationId == "" {
-		organizationId, err = ocm.CurrentOrganizationId(connection)
-		if err != nil {
-			return err
-		}
-	}
-
 	if dumpConfig {
 		body, err := json.Marshal(inheritance)
 		if err != nil {
@@ -69,6 +57,18 @@ func (f *OCMLabelsPolicyBackend) ApplyVersionDataInheritanceConfiguration(organi
 			return err
 		}
 		return nil
+	}
+
+	connection, err := ocm.NewOCMConnection()
+	if err != nil {
+		return err
+	}
+
+	if organizationId == "" {
+		organizationId, err = ocm.CurrentOrganizationId(connection)
+		if err != nil {
+			return err
+		}
 	}
 
 	output.Log(dryRun, "Apply version data inheritance configuration to organization %s\n", organizationId)

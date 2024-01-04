@@ -46,18 +46,6 @@ func (f *OCMLabelsPolicyBackend) ListSectorConfiguration(organizationId string) 
 }
 
 func (f *OCMLabelsPolicyBackend) ApplySectorConfiguration(organizationId string, sectorDependencies []sectors.SectorDependencies, dumpSectorDeps bool, dryRun bool) error {
-	connection, err := ocm.NewOCMConnection()
-	if err != nil {
-		return err
-	}
-
-	if organizationId == "" {
-		organizationId, err = ocm.CurrentOrganizationId(connection)
-		if err != nil {
-			return err
-		}
-	}
-
 	if dumpSectorDeps {
 		body, err := json.Marshal(sectorDependencies)
 		if err != nil {
@@ -68,6 +56,18 @@ func (f *OCMLabelsPolicyBackend) ApplySectorConfiguration(organizationId string,
 			return err
 		}
 		return nil
+	}
+
+	connection, err := ocm.NewOCMConnection()
+	if err != nil {
+		return err
+	}
+
+	if organizationId == "" {
+		organizationId, err = ocm.CurrentOrganizationId(connection)
+		if err != nil {
+			return err
+		}
 	}
 
 	output.Log(dryRun, "Apply sector configuration to organization %s\n", organizationId)

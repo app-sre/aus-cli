@@ -45,18 +45,6 @@ func (f *OCMLabelsPolicyBackend) ListBlockedVersionExpressions(organizationId st
 }
 
 func (f *OCMLabelsPolicyBackend) ApplyBlockedVersionExpressions(organizationId string, blockExpressions []string, dumpVersionBlocks bool, dryRun bool) error {
-	connection, err := ocm.NewOCMConnection()
-	if err != nil {
-		return err
-	}
-
-	if organizationId == "" {
-		organizationId, err = ocm.CurrentOrganizationId(connection)
-		if err != nil {
-			return err
-		}
-	}
-
 	if dumpVersionBlocks {
 		body, err := json.Marshal(blockExpressions)
 		if err != nil {
@@ -67,6 +55,18 @@ func (f *OCMLabelsPolicyBackend) ApplyBlockedVersionExpressions(organizationId s
 			return err
 		}
 		return nil
+	}
+
+	connection, err := ocm.NewOCMConnection()
+	if err != nil {
+		return err
+	}
+
+	if organizationId == "" {
+		organizationId, err = ocm.CurrentOrganizationId(connection)
+		if err != nil {
+			return err
+		}
 	}
 
 	output.Log(dryRun, "Apply blocked version labels to organization %s\n", organizationId)
