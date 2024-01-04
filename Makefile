@@ -50,6 +50,6 @@ push-image: build-image
 
 .PHONY: lint
 lint:
-	@$(CONTAINER_ENGINE) run --rm -w app -v "$(PWD):/app" --workdir=/app \
+	@$(CONTAINER_ENGINE) --config=$(DOCKER_CONF) run --rm -w app -v "$(PWD):/app" --workdir=/app \
 		quay.io/app-sre/golangci-lint:v$(shell cat .golangciversion) \
 		golangci-lint run --timeout 15m
