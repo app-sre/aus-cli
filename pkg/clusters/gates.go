@@ -28,7 +28,7 @@ func AckAllGatesForYStream(cluster *ClusterInfo, yStream string, connection *sdk
 	if err != nil {
 		return nil, err
 	}
-	unackedGates, err := cluster.MissingSTSGateAgreements(nil, gates)
+	unackedGates, err := cluster.MissingGateAgreements(nil, gates)
 	if err != nil {
 		return nil, err
 	}
