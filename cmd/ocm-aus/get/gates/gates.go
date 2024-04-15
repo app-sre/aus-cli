@@ -114,7 +114,7 @@ func run(cmd *cobra.Command, argv []string) error {
 			if !cluster.STSEnabled() {
 				continue
 			}
-			missingAgreements, err := cluster.MissingSTSGateAgreements(blockedVersionExpressions, versionGates)
+			missingAgreements, err := cluster.MissingGateAgreements(blockedVersionExpressions, versionGates)
 			if err != nil {
 				return err
 			}

@@ -75,7 +75,7 @@ func (c *ClusterInfo) YStreamUpgrades(considerBlockedVersions bool, additionalBl
 	return keys
 }
 
-func (c *ClusterInfo) MissingSTSGateAgreements(additionalBlockedVersions []*regexp.Regexp, gates map[string][]*csv1.VersionGate) ([]*csv1.VersionGate, error) {
+func (c *ClusterInfo) MissingGateAgreements(additionalBlockedVersions []*regexp.Regexp, gates map[string][]*csv1.VersionGate) ([]*csv1.VersionGate, error) {
 	var missingGates []*csv1.VersionGate
 	for _, yStreamUpgrade := range c.YStreamUpgrades(true, additionalBlockedVersions) {
 		yStreamGates, ok := gates[yStreamUpgrade]
@@ -83,7 +83,7 @@ func (c *ClusterInfo) MissingSTSGateAgreements(additionalBlockedVersions []*rege
 			continue
 		}
 		for _, yStreamGate := range yStreamGates {
-			if !yStreamGate.STSOnly() || !c.STSEnabled() {
+			if yStreamGate.STSOnly() && !c.STSEnabled() {
 				continue
 			}
 
@@ -105,7 +105,7 @@ func (c *ClusterInfo) MissingSTSGateAgreements(additionalBlockedVersions []*rege
 }
 
 func (c *ClusterInfo) YStreamsWithMissingSTSGateAgreements(additionalBlockedVersions []*regexp.Regexp, gates map[string][]*csv1.VersionGate) ([]string, error) {
-	missingGates, err := c.MissingSTSGateAgreements(additionalBlockedVersions, gates)
+	missingGates, err := c.MissingGateAgreements(additionalBlockedVersions, gates)
 	if err != nil {
 		return nil, err
 	}
