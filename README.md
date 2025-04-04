@@ -114,25 +114,28 @@ Together with the `--replace` option, applying from a file makes sure that the d
 
 When `--dump` is used without the `--replace` option, one needs to be logged in to OCM.
 
-## Manage sector dependencies
+## Manage sector configurations
 
 Sectors are dependant groups of clusters. A version is only considered for upgrade within a sector if all dependant sectors have been fully upgraded to to that version.
 
-Create or replace an organizations sector dependencies with `ocm aus apply sectors [flags]`
+Create or replace an organizations sector configurations with `ocm aus apply sectors [flags]`
 
-| Flags        | Definition                                                                                                                               |
-|--------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| --add-dep    | `A=B,C` ... Establishes a dependency from sector A to sectors B and C. Can be specified multiple times.                                  |
-| --remove-dep | `A=B`   ... Deletes the dependency from sector A to sector B.                                                                            |
-| --replace    | Replaces all existing sector dependencies with the ones specified by `--add-sector-dep` or the ones provided via stdin.                  |
-| --org-id     | The OCM organization ID where the sectors and dependencies are defined. Defaults to the organization ID of the currently logged in user. |
+| Flags                          | Definition                                                                                                                                            |
+|--------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --sector-max-parallel-upgrades | `A=x` or `A=x%` ... Sets the maximum number (or percent) `x` of concurrent upgrades within sector A. Can be specified for each sector.                |
+| --add-dep                      | `A=B,C` ... Establishes a dependency from sector A to sectors B and C. Can be specified multiple times.                                               |
+| --remove-dep                   | `A=B`   ... Deletes the dependency from sector A to sector B.                                                                                         |
+| --replace                      | Replaces all existing sector config with the ones specified by `--add-dep` and `--sector-max-parallel-upgrades` or the ones provided via stdin.       |
+| --org-id                       | The OCM organization ID where the sectors are defined. Defaults to the organization ID of the currently logged in user.                               |
 
 ```shell
-ocm aus apply sectors --add-dep prod=stage --add-dep stage=dev,dev-2
-ocm aus apply sectors --remove-dep stage=dev-2
-Apply sector configuration to organization 2Q0awarcxlarxaWwrFFpbLITiGu
+# apply a config at once
+$ ocm aus apply sectors --add-dep prod=stage --add-dep stage=dev,dev-2 --sector-max-parallel-upgrades stage=10 --sector-max-parallel-upgrades prod=20%
 
-ocm aus get sectors
+# remove a single sector dependency from `stage` and reset the max-parallel-upgrade setting for `stage`
+$ ocm aus apply sectors --remove-dep stage=dev-2 --sector-max-parallel-upgrades stage=
+
+$ ocm aus get sectors
 [
   {
     "dependencies": [
@@ -144,12 +147,13 @@ ocm aus get sectors
     "dependencies": [
        "stage"
     ],
+    "maxParallelUpgrades": "20%",
     "name": "prod"
   }
 ]
 ```
 
-Sector dependencies can also be written to a file and applied from a file.
+Sector configs can also be written to a file and applied from a file.
 
 ```shell
 ocm aus apply sectors --add-dep prod=stage --add-dep stage=dev --replace --dump | tee sector-deps.json

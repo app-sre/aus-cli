@@ -62,7 +62,7 @@ func (s *Sector) DeleteDependency(sector string) {
 	}
 }
 
-func NewSectorDependencies(sectorRepr string) (Sector, error) {
+func newSectorDependencies(sectorRepr string) (Sector, error) {
 	split := strings.Split(sectorRepr, "=")
 	var dependencies []string = []string{}
 	if len(split) == 2 {
@@ -77,7 +77,7 @@ func NewSectorDependencies(sectorRepr string) (Sector, error) {
 func NewSectorDependenciesList(sectorListRepr []string) ([]Sector, error) {
 	sectorDependencies := []Sector{}
 	for _, sectorRepr := range sectorListRepr {
-		s, err := NewSectorDependencies(sectorRepr)
+		s, err := newSectorDependencies(sectorRepr)
 		if err != nil {
 			return nil, err
 		}
@@ -85,6 +85,31 @@ func NewSectorDependenciesList(sectorListRepr []string) ([]Sector, error) {
 	}
 	sortSectors(sectorDependencies)
 	return sectorDependencies, nil
+}
+
+func newSectorMaxParallelUpgrades(sectorRepr string) (Sector, error) {
+	split := strings.Split(sectorRepr, "=")
+	var maxParallelUpgrades string
+	if len(split) == 2 {
+		maxParallelUpgrades = split[1]
+	}
+	return Sector{
+		Name:                split[0],
+		MaxParallelUpgrades: maxParallelUpgrades,
+	}, nil
+}
+
+func NewSectorMaxParallelUpgradesList(sectorListRepr []string) ([]Sector, error) {
+	sectorList := []Sector{}
+	for _, sectorRepr := range sectorListRepr {
+		s, err := newSectorMaxParallelUpgrades(sectorRepr)
+		if err != nil {
+			return nil, err
+		}
+		sectorList = append(sectorList, s)
+	}
+	sortSectors(sectorList)
+	return sectorList, nil
 }
 
 func AddMissingSectors(sectors []Sector) []Sector {
@@ -118,10 +143,20 @@ func sortSectors(sectors []Sector) {
 	})
 }
 
-func ConsolidateSectorDependencies(current []Sector, toAdd []Sector, toDelete []Sector) []Sector {
+func ConsolidateSectorList(current []Sector, toAdd []Sector, toDelete []Sector, maxParallelUpgrades []Sector) []Sector {
 	sectorMap := make(map[string]*Sector)
 	for i := range current {
 		sectorMap[current[i].Name] = &current[i]
+	}
+
+	// maxParallelUpgrades
+	for i := range maxParallelUpgrades {
+		sector := maxParallelUpgrades[i]
+		if currentSector, ok := sectorMap[sector.Name]; ok {
+			currentSector.MaxParallelUpgrades = sector.MaxParallelUpgrades
+		} else {
+			sectorMap[sector.Name] = &sector
+		}
 	}
 
 	// adding
@@ -129,6 +164,9 @@ func ConsolidateSectorDependencies(current []Sector, toAdd []Sector, toDelete []
 		sector := toAdd[i]
 		if currentSector, ok := sectorMap[sector.Name]; ok {
 			currentSector.AddDependencies(sector.Dependencies)
+			if sector.MaxParallelUpgrades != "" {
+				currentSector.MaxParallelUpgrades = sector.MaxParallelUpgrades
+			}
 		} else {
 			sectorMap[sector.Name] = &sector
 		}
@@ -146,21 +184,21 @@ func ConsolidateSectorDependencies(current []Sector, toAdd []Sector, toDelete []
 
 	// cleanup obsolete sectors
 	for sectorName := range sectorMap {
-		if sectorMap[sectorName].Dependencies == nil || len(sectorMap[sectorName].Dependencies) == 0 {
+		if len(sectorMap[sectorName].Dependencies) == 0 && sectorMap[sectorName].MaxParallelUpgrades == "" {
 			delete(sectorMap, sectorName)
 		}
 	}
 
-	sectorDependencies := []Sector{}
+	sectorList := []Sector{}
 	for _, sector := range sectorMap {
-		sectorDependencies = append(sectorDependencies, *sector)
+		sectorList = append(sectorList, *sector)
 	}
-	sortSectors(sectorDependencies)
-	return sectorDependencies
+	sortSectors(sectorList)
+	return sectorList
 }
 
-func ReadSectorDependenciesFromReader(reader io.Reader) ([]Sector, error) {
-	var deps []Sector
-	err := json.NewDecoder(reader).Decode(&deps)
-	return deps, err
+func ReadSectorsFromReader(reader io.Reader) ([]Sector, error) {
+	var sectorList []Sector
+	err := json.NewDecoder(reader).Decode(&sectorList)
+	return sectorList, err
 }
