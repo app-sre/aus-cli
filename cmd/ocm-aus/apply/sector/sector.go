@@ -91,7 +91,7 @@ func init() {
 }
 
 func run(cmd *cobra.Command, argv []string) error {
-	var sectorDependencies []sectors.SectorDependencies
+	var sectorDependencies []sectors.Sector
 	var err error
 
 	backendType, err := cmd.Flags().GetString("backend")
@@ -103,7 +103,7 @@ func run(cmd *cobra.Command, argv []string) error {
 		return err
 	}
 
-	var adding, removing []sectors.SectorDependencies
+	var adding, removing []sectors.Sector
 	if len(argv) > 0 && argv[0] == "-" {
 		adding, err = sectors.ReadSectorDependenciesFromReader(cmd.InOrStdin())
 		if err != nil {
@@ -122,7 +122,7 @@ func run(cmd *cobra.Command, argv []string) error {
 	}
 
 	// consolidate dependencies
-	var currentSectorDependencies []sectors.SectorDependencies = []sectors.SectorDependencies{}
+	var currentSectorDependencies []sectors.Sector = []sectors.Sector{}
 	if !args.replace {
 		currentSectorDependencies, err = be.ListSectorConfiguration(args.organizationId)
 		if err != nil {

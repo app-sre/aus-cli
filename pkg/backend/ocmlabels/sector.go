@@ -30,7 +30,7 @@ import (
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 )
 
-func (f *OCMLabelsPolicyBackend) ListSectorConfiguration(organizationId string) ([]sectors.SectorDependencies, error) {
+func (f *OCMLabelsPolicyBackend) ListSectorConfiguration(organizationId string) ([]sectors.Sector, error) {
 	connection, err := ocm.NewOCMConnection()
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (f *OCMLabelsPolicyBackend) ListSectorConfiguration(organizationId string) 
 	return listSectorConfigurationFromOrganizationLabels(organizationId, connection)
 }
 
-func (f *OCMLabelsPolicyBackend) ApplySectorConfiguration(organizationId string, sectorDependencies []sectors.SectorDependencies, dumpSectorDeps bool, dryRun bool) error {
+func (f *OCMLabelsPolicyBackend) ApplySectorConfiguration(organizationId string, sectorDependencies []sectors.Sector, dumpSectorDeps bool, dryRun bool) error {
 	if dumpSectorDeps {
 		body, err := json.Marshal(sectorDependencies)
 		if err != nil {
@@ -93,20 +93,20 @@ func listOrganizationSectorLabels(organizationId string, connection *sdk.Connect
 	return listOrganizationLabels(organizationId, newAusLabelKey("sector-deps."), connection)
 }
 
-func listSectorConfigurationFromOrganizationLabels(organizationId string, connection *sdk.Connection) ([]sectors.SectorDependencies, error) {
+func listSectorConfigurationFromOrganizationLabels(organizationId string, connection *sdk.Connection) ([]sectors.Sector, error) {
 	labels, err := listOrganizationLabels(organizationId, newAusLabelKey("sector-deps."), connection)
 	if err != nil {
 		return nil, err
 	}
-	sectorDeps := []sectors.SectorDependencies{}
+	sectorDeps := []sectors.Sector{}
 	for _, sectorLabel := range labels {
 		sectorName := strings.TrimPrefix(sectorLabel.Key(), newAusLabelKey("sector-deps."))
-		sectorDeps = append(sectorDeps, sectors.SectorDependencies{Name: sectorName, Dependencies: strings.Split(sectorLabel.Value(), ",")})
+		sectorDeps = append(sectorDeps, sectors.Sector{Name: sectorName, Dependencies: strings.Split(sectorLabel.Value(), ",")})
 	}
 	return sectorDeps, nil
 }
 
-func sectorDependencyToLabels(sectorDep sectors.SectorDependencies, organizationId string) (*amv1.Label, error) {
+func sectorDependencyToLabels(sectorDep sectors.Sector, organizationId string) (*amv1.Label, error) {
 	return buildOCMLabel(
 		newAusLabelKey(fmt.Sprintf("sector-deps.%s", sectorDep.Name)), utils.StringArrayToCSV(sectorDep.Dependencies), "", organizationId,
 	)
