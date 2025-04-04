@@ -48,7 +48,7 @@ func (f *OCMLabelsPolicyBackend) Status(organizationId string, showClustersWitho
 	}
 	clusters.SortClusters(clusterInfos)
 
-	sectors, err = listSectorConfigurationFromOrganizationLabels(organization.ID(), connection)
+	sectors, err = listSectorsFromOrganizationLabels(organization.ID(), connection)
 	if err != nil {
 		return
 	}
