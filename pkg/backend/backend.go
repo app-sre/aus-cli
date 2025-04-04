@@ -40,7 +40,7 @@ type PolicyBackend interface {
 
 	ListSectorConfiguration(organizationId string) ([]sectors.Sector, error)
 
-	ApplySectorConfiguration(organizationId string, sectorDependencies []sectors.Sector, dumpSectorDeps bool, dryRun bool) error
+	ApplySectorConfiguration(organizationId string, sectors []sectors.Sector, dumpSectors bool, dryRun bool) error
 
 	GetVersionDataInheritanceConfiguration(organizationId string) (versiondata.VersionDataInheritanceConfig, error)
 
