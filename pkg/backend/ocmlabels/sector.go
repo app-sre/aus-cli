@@ -30,7 +30,7 @@ import (
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 )
 
-func (f *OCMLabelsPolicyBackend) ListSectorConfiguration(organizationId string) ([]sectors.SectorDependencies, error) {
+func (f *OCMLabelsPolicyBackend) ListSectorConfiguration(organizationId string) ([]sectors.Sector, error) {
 	connection, err := ocm.NewOCMConnection()
 	if err != nil {
 		return nil, err
@@ -42,12 +42,12 @@ func (f *OCMLabelsPolicyBackend) ListSectorConfiguration(organizationId string) 
 			return nil, err
 		}
 	}
-	return listSectorConfigurationFromOrganizationLabels(organizationId, connection)
+	return listSectorsFromOrganizationLabels(organizationId, connection)
 }
 
-func (f *OCMLabelsPolicyBackend) ApplySectorConfiguration(organizationId string, sectorDependencies []sectors.SectorDependencies, dumpSectorDeps bool, dryRun bool) error {
-	if dumpSectorDeps {
-		body, err := json.Marshal(sectorDependencies)
+func (f *OCMLabelsPolicyBackend) ApplySectorConfiguration(organizationId string, sectors []sectors.Sector, dumpSectors bool, dryRun bool) error {
+	if dumpSectors {
+		body, err := json.Marshal(sectors)
 		if err != nil {
 			return err
 		}
@@ -78,36 +78,101 @@ func (f *OCMLabelsPolicyBackend) ApplySectorConfiguration(organizationId string,
 	}
 	labelsContainer := NewOCMLabelsContainer(sectorLabels)
 
-	for _, sector := range sectorDependencies {
-		l, err := sectorDependencyToLabels(sector, organizationId)
-		if err != nil {
-			return err
+	for _, sector := range sectors {
+		if len(sector.Dependencies) != 0 {
+			l, err := sectorDependencyToLabels(sector, organizationId)
+			if err != nil {
+				return err
+			}
+			labelsContainer.AddLabel(l)
 		}
-		labelsContainer.AddLabel(l)
+		if sector.MaxParallelUpgrades != "" {
+			l, err := sectorMaxParallelUpgradesToLabels(sector, organizationId)
+			if err != nil {
+				return err
+			}
+			labelsContainer.AddLabel(l)
+		}
 	}
 
 	return labelsContainer.Reconcile(dryRun, connection)
 }
 
-func listOrganizationSectorLabels(organizationId string, connection *sdk.Connection) ([]*amv1.Label, error) {
+func listOrganizationSectorDependenciesLabels(organizationId string, connection *sdk.Connection) ([]*amv1.Label, error) {
 	return listOrganizationLabels(organizationId, newAusLabelKey("sector-deps."), connection)
 }
 
-func listSectorConfigurationFromOrganizationLabels(organizationId string, connection *sdk.Connection) ([]sectors.SectorDependencies, error) {
-	labels, err := listOrganizationLabels(organizationId, newAusLabelKey("sector-deps."), connection)
+func listOrganizationSectorMaxParallelUpgradesLabels(organizationId string, connection *sdk.Connection) ([]*amv1.Label, error) {
+	return listOrganizationLabels(organizationId, newAusLabelKey("sector-max-parallel-upgrades."), connection)
+}
+
+func listOrganizationSectorLabels(organizationId string, connection *sdk.Connection) ([]*amv1.Label, error) {
+	sectorDependenciesLabels, err := listOrganizationSectorDependenciesLabels(organizationId, connection)
 	if err != nil {
 		return nil, err
 	}
-	sectorDeps := []sectors.SectorDependencies{}
-	for _, sectorLabel := range labels {
-		sectorName := strings.TrimPrefix(sectorLabel.Key(), newAusLabelKey("sector-deps."))
-		sectorDeps = append(sectorDeps, sectors.SectorDependencies{Name: sectorName, Dependencies: strings.Split(sectorLabel.Value(), ",")})
+	sectorMaxParallelUpgradesLabels, err := listOrganizationSectorMaxParallelUpgradesLabels(organizationId, connection)
+	if err != nil {
+		return nil, err
 	}
-	return sectorDeps, nil
+	labels := make([]*amv1.Label, 0, len(sectorDependenciesLabels)+len(sectorMaxParallelUpgradesLabels))
+	labels = append(labels, sectorDependenciesLabels...)
+	labels = append(labels, sectorMaxParallelUpgradesLabels...)
+	return labels, nil
 }
 
-func sectorDependencyToLabels(sectorDep sectors.SectorDependencies, organizationId string) (*amv1.Label, error) {
+func addOrUpdateSector(sectorMap map[string]sectors.Sector, sector sectors.Sector) {
+	if existingSector, exists := sectorMap[sector.Name]; exists {
+		if sector.Dependencies != nil {
+			existingSector.Dependencies = sector.Dependencies
+		}
+		if sector.MaxParallelUpgrades != "" {
+			existingSector.MaxParallelUpgrades = sector.MaxParallelUpgrades
+		}
+	} else {
+		sectorMap[sector.Name] = sector
+	}
+}
+
+func listSectorsFromOrganizationLabels(organizationId string, connection *sdk.Connection) ([]sectors.Sector, error) {
+	sectorMap := make(map[string]sectors.Sector)
+
+	labels, err := listOrganizationSectorDependenciesLabels(organizationId, connection)
+	if err != nil {
+		return nil, err
+	}
+	for _, label := range labels {
+		sectorName := strings.TrimPrefix(label.Key(), newAusLabelKey("sector-deps."))
+		sector := sectors.Sector{Name: sectorName, Dependencies: strings.Split(label.Value(), ",")}
+		addOrUpdateSector(sectorMap, sector)
+	}
+
+	labels, err = listOrganizationSectorMaxParallelUpgradesLabels(organizationId, connection)
+	if err != nil {
+		return nil, err
+	}
+	for _, label := range labels {
+		sectorName := strings.TrimPrefix(label.Key(), newAusLabelKey("sector-max-parallel-upgrades."))
+		sector := sectors.Sector{Name: sectorName, MaxParallelUpgrades: label.Value()}
+		addOrUpdateSector(sectorMap, sector)
+	}
+
+	sectors := make([]sectors.Sector, 0, len(sectorMap))
+	for _, sector := range sectorMap {
+		sectors = append(sectors, sector)
+	}
+
+	return sectors, nil
+}
+
+func sectorDependencyToLabels(sector sectors.Sector, organizationId string) (*amv1.Label, error) {
 	return buildOCMLabel(
-		newAusLabelKey(fmt.Sprintf("sector-deps.%s", sectorDep.Name)), utils.StringArrayToCSV(sectorDep.Dependencies), "", organizationId,
+		newAusLabelKey(fmt.Sprintf("sector-deps.%s", sector.Name)), utils.StringArrayToCSV(sector.Dependencies), "", organizationId,
+	)
+}
+
+func sectorMaxParallelUpgradesToLabels(sector sectors.Sector, organizationId string) (*amv1.Label, error) {
+	return buildOCMLabel(
+		newAusLabelKey(fmt.Sprintf("sector-max-parallel-upgrades.%s", sector.Name)), sector.MaxParallelUpgrades, "", organizationId,
 	)
 }

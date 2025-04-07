@@ -38,15 +38,15 @@ type PolicyBackend interface {
 
 	ApplyBlockedVersionExpressions(organizationId string, blockExpressions []string, dumpVersionBlocks bool, dryRun bool) error
 
-	ListSectorConfiguration(organizationId string) ([]sectors.SectorDependencies, error)
+	ListSectorConfiguration(organizationId string) ([]sectors.Sector, error)
 
-	ApplySectorConfiguration(organizationId string, sectorDependencies []sectors.SectorDependencies, dumpSectorDeps bool, dryRun bool) error
+	ApplySectorConfiguration(organizationId string, sectors []sectors.Sector, dumpSectors bool, dryRun bool) error
 
 	GetVersionDataInheritanceConfiguration(organizationId string) (versiondata.VersionDataInheritanceConfig, error)
 
 	ApplyVersionDataInheritanceConfiguration(organizationId string, inheritance versiondata.VersionDataInheritanceConfig, dumpConfig bool, dryRun bool) error
 
-	Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusterInfos []*clusters.ClusterInfo, blockedVersions []string, sectors []sectors.SectorDependencies, inheritance versiondata.VersionDataInheritanceConfig, err error)
+	Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusterInfos []*clusters.ClusterInfo, blockedVersions []string, sectors []sectors.Sector, inheritance versiondata.VersionDataInheritanceConfig, err error)
 }
 
 func NewPolicyBackend(backendType string) (PolicyBackend, error) {

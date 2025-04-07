@@ -24,7 +24,7 @@ import (
 	amv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 )
 
-func (f *OCMLabelsPolicyBackend) Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusterInfos []*clusters.ClusterInfo, blockedVersions []string, sectors []sectors.SectorDependencies, inheritance versiondata.VersionDataInheritanceConfig, err error) {
+func (f *OCMLabelsPolicyBackend) Status(organizationId string, showClustersWithoutPolicy bool) (organization *amv1.Organization, clusterInfos []*clusters.ClusterInfo, blockedVersions []string, sectors []sectors.Sector, inheritance versiondata.VersionDataInheritanceConfig, err error) {
 	connection, err := ocm.NewOCMConnection()
 	if err != nil {
 		return
@@ -48,7 +48,7 @@ func (f *OCMLabelsPolicyBackend) Status(organizationId string, showClustersWitho
 	}
 	clusters.SortClusters(clusterInfos)
 
-	sectors, err = listSectorConfigurationFromOrganizationLabels(organization.ID(), connection)
+	sectors, err = listSectorsFromOrganizationLabels(organization.ID(), connection)
 	if err != nil {
 		return
 	}

@@ -100,10 +100,10 @@ func run(cmd *cobra.Command, argv []string) error {
 
 		w.WriteString("Sector Configuration:\t(%d in total)\n", len(sectors))
 		if len(sectors) > 0 {
-			w1.WriteString("Name\tDepends on\n")
-			w1.WriteString("----\t----------\n")
+			w1.WriteString("Name\tMax Parallel Upgrades\tDepends on\n")
+			w1.WriteString("----\t---------------------\t----------\n")
 			for _, sector := range sectors {
-				w1.WriteString("%s\t%s\n", sector.Name, strings.Join(sector.Dependencies, ", "))
+				w1.WriteString("%s\t%s\t%s\n", sector.Name, sector.MaxParallelUpgrades, strings.Join(sector.Dependencies, ", "))
 			}
 		}
 

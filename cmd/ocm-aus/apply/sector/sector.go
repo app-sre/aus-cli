@@ -25,12 +25,13 @@ import (
 )
 
 var args struct {
-	organizationId string
-	add            []string
-	remove         []string
-	replace        bool
-	dryRun         bool
-	dump           bool
+	organizationId            string
+	sectorMaxParallelUpgrades []string
+	add                       []string
+	remove                    []string
+	replace                   bool
+	dryRun                    bool
+	dump                      bool
 }
 
 var Cmd = &cobra.Command{
@@ -55,6 +56,13 @@ func init() {
 		"The ID of the OCM organization to manage",
 	)
 
+	flags.StringArrayVarP(
+		&args.sectorMaxParallelUpgrades,
+		"sector-max-parallel-upgrades",
+		"m",
+		[]string{},
+		"",
+	)
 	flags.StringArrayVarP(
 		&args.add,
 		"add-dep",
@@ -91,7 +99,7 @@ func init() {
 }
 
 func run(cmd *cobra.Command, argv []string) error {
-	var sectorDependencies []sectors.SectorDependencies
+	var sectorList []sectors.Sector
 	var err error
 
 	backendType, err := cmd.Flags().GetString("backend")
@@ -103,13 +111,18 @@ func run(cmd *cobra.Command, argv []string) error {
 		return err
 	}
 
-	var adding, removing []sectors.SectorDependencies
+	var sectorsMaxParallelUpgrades, adding, removing []sectors.Sector
 	if len(argv) > 0 && argv[0] == "-" {
-		adding, err = sectors.ReadSectorDependenciesFromReader(cmd.InOrStdin())
+		adding, err = sectors.ReadSectorsFromReader(cmd.InOrStdin())
 		if err != nil {
 			return fmt.Errorf("failed to decode input: %v", err)
 		}
 	} else {
+		sectorsMaxParallelUpgrades, err = sectors.NewSectorMaxParallelUpgradesList(args.sectorMaxParallelUpgrades)
+		if err != nil {
+			return err
+		}
+
 		adding, err = sectors.NewSectorDependenciesList(args.add)
 		if err != nil {
 			return err
@@ -122,18 +135,18 @@ func run(cmd *cobra.Command, argv []string) error {
 	}
 
 	// consolidate dependencies
-	var currentSectorDependencies []sectors.SectorDependencies = []sectors.SectorDependencies{}
+	var currentSectors []sectors.Sector = []sectors.Sector{}
 	if !args.replace {
-		currentSectorDependencies, err = be.ListSectorConfiguration(args.organizationId)
+		currentSectors, err = be.ListSectorConfiguration(args.organizationId)
 		if err != nil {
 			return err
 		}
 	}
-	sectorDependencies = sectors.ConsolidateSectorDependencies(
-		currentSectorDependencies, adding, removing,
+	sectorList = sectors.ConsolidateSectorList(
+		currentSectors, adding, removing, sectorsMaxParallelUpgrades,
 	)
 
-	err = be.ApplySectorConfiguration(args.organizationId, sectorDependencies, args.dump, args.dryRun)
+	err = be.ApplySectorConfiguration(args.organizationId, sectorList, args.dump, args.dryRun)
 	if err != nil {
 		return err
 	}

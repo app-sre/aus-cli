@@ -28,7 +28,7 @@ build:
 
 .PHONY: release
 release:
-	@$(CONTAINER_ENGINE) run --rm -v "$(PWD):/app" -u $(id -u ${USER}):$(id -g ${USER}) -e GITHUB_TOKEN=$(GITHUB_TOKEN) --workdir=/app ghcr.io/goreleaser/goreleaser:v1.18.2 release
+	@$(CONTAINER_ENGINE) run --rm -v "$(PWD):/app:z" -u $(id -u ${USER}):$(id -g ${USER}) -e GITHUB_TOKEN=$(GITHUB_TOKEN) --workdir=/app ghcr.io/goreleaser/goreleaser:v1.18.2 release
 
 .PHONY: test
 test: build
@@ -50,6 +50,6 @@ push-image: build-image
 
 .PHONY: lint
 lint:
-	@$(CONTAINER_ENGINE) --config=$(DOCKER_CONF) run --rm -w app -v "$(PWD):/app" --workdir=/app \
+	@$(CONTAINER_ENGINE) --config=$(DOCKER_CONF) run --rm -w app -v "$(PWD):/app:z" --workdir=/app \
 		quay.io/app-sre/golangci-lint:v$(shell cat .golangciversion) \
 		golangci-lint run --timeout 15m
