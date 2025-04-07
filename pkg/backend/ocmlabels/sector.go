@@ -129,7 +129,6 @@ func addOrUpdateSector(sectorMap map[string]sectors.Sector, sector sectors.Secto
 		if sector.MaxParallelUpgrades != "" {
 			existingSector.MaxParallelUpgrades = sector.MaxParallelUpgrades
 		}
-		sectorMap[sector.Name] = existingSector
 	} else {
 		sectorMap[sector.Name] = sector
 	}
