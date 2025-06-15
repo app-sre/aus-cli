@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
-	github.com/nwidger/jsoncolor v0.3.1
+	github.com/nwidger/jsoncolor v0.3.2
 	github.com/openshift-online/ocm-cli v0.1.66
 	github.com/openshift-online/ocm-sdk-go v0.1.338
 	github.com/pkg/errors v0.9.1
