@@ -4,6 +4,8 @@ WORKDIR /build
 COPY . .
 RUN make build
 
-FROM registry.access.redhat.com/ubi9-minimal:9.5-1733767867@sha256:dee813b83663d420eb108983a1c94c614ff5d3fcb5159a7bd0324f0edbe7fca1
+FROM registry.access.redhat.com/ubi9-minimal:9.6-1749489516@sha256:9bed53318702feb9b15c79d56d4fc2a6857fdffa335eee7be53421989c7658d1
 
-COPY --from=builder /build/ocm-aus /usr/local/bin
+USER 1001
+
+COPY --from=builder --chown=1001:0 /build/ocm-aus /usr/local/bin
