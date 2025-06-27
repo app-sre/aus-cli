@@ -5,6 +5,10 @@ RUN git config --global --add safe.directory /build
 COPY . .
 RUN make build
 
+FROM builder as test
+
+RUN make test
+
 FROM quay.io/app-sre/ocm-container:6d322fb
 
 COPY --from=builder /build/ocm-aus /usr/local/bin
