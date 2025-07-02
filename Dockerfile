@@ -8,5 +8,5 @@ RUN make build
 FROM builder as test
 RUN make test
 
-FROM quay.io/app-sre/ocm-container:6d322fb
+FROM quay.io/redhat-services-prod/openshift/ocm-container:8ad42b3
 COPY --from=builder /build/ocm-aus /usr/local/bin
