@@ -1,0 +1,31 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/app-sre/aus-cli?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "25"
+#    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && git_tag.startsWith("v")
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "main"
+  creationTimestamp: null
+  labels:
+    appstudio.openshift.io/application: aus-cli-main
+    appstudio.openshift.io/component: aus-cli-main
+    pipelines.appstudio.openshift.io/type: build
+  name: aus-cli-main-on-tag
+  namespace: app-sre-tenant
+
+spec:
+  pipelineSpec:
+    tasks:
+      - name: task
+        displayName: This is a task
+        taskSpec:
+          steps:
+            - name: task-step
+              image: registry.access.redhat.com/ubi9/ubi-micro
+              script: |
+                echo "Hi there!"
+                exit 0
