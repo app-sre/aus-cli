@@ -187,7 +187,7 @@ func applyOCMLabel(label *amv1.Label, dryRun bool, connection *sdk.Connection) e
 		request = connection.AccountsMgmt().V1().Organizations().Organization(label.OrganizationID()).Labels().Add().Body(label)
 		output.Debug(dryRun, "Add label %s to organization %s\n", label.Key(), label.OrganizationID())
 	} else {
-		return fmt.Errorf("Label is missing subscription_id or organization_id")
+		return fmt.Errorf("label is missing subscription_id or organization_id")
 	}
 	if debug.Enabled() {
 		buf := new(bytes.Buffer)

@@ -64,7 +64,7 @@ func (s *Sector) DeleteDependency(sector string) {
 
 func newSectorDependencies(sectorRepr string) (Sector, error) {
 	split := strings.Split(sectorRepr, "=")
-	var dependencies []string = []string{}
+	var dependencies = []string{}
 	if len(split) == 2 {
 		dependencies = strings.Split(split[1], ",")
 	}

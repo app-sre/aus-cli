@@ -135,7 +135,7 @@ func run(cmd *cobra.Command, argv []string) error {
 	}
 
 	// consolidate dependencies
-	var currentSectors []sectors.Sector = []sectors.Sector{}
+	var currentSectors = []sectors.Sector{}
 	if !args.replace {
 		currentSectors, err = be.ListSectorConfiguration(args.organizationId)
 		if err != nil {

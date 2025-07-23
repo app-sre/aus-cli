@@ -27,10 +27,10 @@ func NewOCMConnection() (*sdk.Connection, error) {
 	// Load the configuration file:
 	cfg, err := config.Load()
 	if err != nil {
-		return nil, fmt.Errorf("Can't load config file: %v", err)
+		return nil, fmt.Errorf("can't load config file: %v", err)
 	}
 	if cfg == nil {
-		return nil, fmt.Errorf("Not logged in, run the 'ocm login' command")
+		return nil, fmt.Errorf("not logged in, run the 'ocm login' command")
 	}
 
 	// Check that the configuration has credentials or tokens that don't have expired:
@@ -39,13 +39,13 @@ func NewOCMConnection() (*sdk.Connection, error) {
 		return nil, err
 	}
 	if !armed {
-		return nil, fmt.Errorf("Not logged in, %s, run the 'ocm login' command", reason)
+		return nil, fmt.Errorf("not logged in, %s, run the 'ocm login' command", reason)
 	}
 
 	// Create the connection:
 	connection, err := cfg.Connection()
 	if err != nil {
-		return nil, fmt.Errorf("Can't create connection: %v", err)
+		return nil, fmt.Errorf("can't create connection: %v", err)
 	}
 
 	return connection, nil

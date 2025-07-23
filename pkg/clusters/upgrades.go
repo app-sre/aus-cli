@@ -87,7 +87,7 @@ func (c *ClusterInfo) MissingGateAgreements(additionalBlockedVersions []*regexp.
 				continue
 			}
 
-			var missing bool = true
+			var missing = true
 			if c.VersionGateAgreements != nil {
 				for _, agreement := range *c.VersionGateAgreements {
 					if agreement.VersionGate().ID() == yStreamGate.ID() {
