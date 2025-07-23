@@ -81,12 +81,14 @@ func TabbedString(f func(io.Writer) error) (string, error) {
 	buf := &bytes.Buffer{}
 	out.Init(buf, 0, 8, 2, ' ', 0)
 
-	err := f(out)
-	if err != nil {
+	if err := f(out); err != nil {
 		return "", err
 	}
 
-	out.Flush()
-	str := string(buf.String())
+	if err := out.Flush(); err != nil {
+		return "", err
+	}
+
+	str := buf.String()
 	return str, nil
 }

@@ -52,5 +52,5 @@ func SubscriptionForDisplayName(organizationId string, displayName string, conne
 	for _, subscription := range subscriptions {
 		return subscription, nil
 	}
-	return nil, fmt.Errorf("No subscription found for display name '%s' in organization '%s'", displayName, organizationId)
+	return nil, fmt.Errorf("no subscription found for display name '%s' in organization '%s'", displayName, organizationId)
 }

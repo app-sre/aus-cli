@@ -116,7 +116,7 @@ func run(cmd *cobra.Command, argv []string) error {
 	}
 
 	// consolidate version blocks
-	var currentVersionBlocks []string = []string{}
+	var currentVersionBlocks = []string{}
 	if !args.replace {
 		currentVersionBlocks, err = be.ListBlockedVersionExpressions(args.organizationId)
 		if err != nil {
