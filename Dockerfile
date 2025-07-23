@@ -1,13 +1,14 @@
-FROM registry.access.redhat.com/ubi9/go-toolset:1.23.9-1749636489@sha256:2a88121395084eaa575e5758b903fffb43dbf9d9586b2878e51678f63235b587 AS builder
+FROM registry.access.redhat.com/ubi9/go-toolset:1.23.9-1749636489@sha256:2a88121395084eaa575e5758b903fffb43dbf9d9586b2878e51678f63235b587 AS base
 COPY LICENSE /licenses/LICENSE
 WORKDIR /build
 RUN git config --global --add safe.directory /build
 COPY . .
+
+FROM base AS builder
 RUN make build
 
-FROM builder AS test
-USER 0
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b /bin v$(cat .golangciversion)
+FROM base AS test
+COPY --from=golangci/golangci-lint:v2.3.0 /usr/bin/golangci-lint /bin/golangci-lint
 RUN golangci-lint run
 RUN make test
 
