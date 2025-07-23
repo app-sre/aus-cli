@@ -2,10 +2,6 @@
 export GO111MODULE=on
 export GOPROXY=https://proxy.golang.org
 
-# Docker setup
-IMAGE_NAME := quay.io/app-sre/ocm-aus-cli
-IMAGE_TAG := $(shell git rev-parse --short=7 HEAD)
-
 ifneq (,$(wildcard $(CURDIR)/.docker))
 	DOCKER_CONF := $(CURDIR)/.docker
 else
@@ -38,18 +34,8 @@ test: build
 fmt:
 	gofmt -s -l -w cmd pkg
 
-.PHONY: image-image
-build-image:
-	@$(CONTAINER_ENGINE) --config=$(DOCKER_CONF) build -t quay.io/app-sre/ocm-aus-cli:latest . --progress=plain
-
-.PHONY: image-push
-push-image: build-image
-	@$(CONTAINER_ENGINE) --config=$(DOCKER_CONF) push $(IMAGE_NAME):latest
-	@$(CONTAINER_ENGINE) tag $(IMAGE_NAME):latest $(IMAGE_NAME):$(IMAGE_TAG)
-	@$(CONTAINER_ENGINE) --config=$(DOCKER_CONF) push $(IMAGE_NAME):$(IMAGE_TAG)
-
 .PHONY: lint
 lint:
 	@$(CONTAINER_ENGINE) --config=$(DOCKER_CONF) run --rm -w app -v "$(PWD):/app:z" --workdir=/app \
-		quay.io/app-sre/golangci-lint:v$(shell cat .golangciversion) \
-		golangci-lint run --timeout 15m
+		quay.io/app-sre/golangci-lint:v2.3.0 \
+		golangci-lint run
