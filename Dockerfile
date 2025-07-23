@@ -8,7 +8,7 @@ FROM base AS builder
 RUN make build
 
 FROM base AS test
-COPY --from=golangci/golangci-lint:v2.3.0 /usr/bin/golangci-lint /bin/golangci-lint
+COPY --from=golangci/golangci-lint:v2.3.0@sha256:67bf4b8b2d64faa4effe19cbda0c651c1c3b8099ea26ec2e09bc20a383d2daa4 /usr/bin/golangci-lint /bin/golangci-lint
 RUN golangci-lint run
 RUN make test
 
