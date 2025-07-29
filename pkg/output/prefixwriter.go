@@ -67,10 +67,9 @@ func PrintListMultiline(w *PrefixWriter, title string, values []string) {
 		w.WriteString("<none>\n")
 		return
 	}
-	indent := "\t"
 	for i, value := range values {
 		if i != 0 {
-			w.WriteString(indent)
+			w.WriteString("\t")
 		}
 		w.WriteString("%s\n", value)
 	}
