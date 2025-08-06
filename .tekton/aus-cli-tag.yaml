@@ -23,8 +23,10 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
+#  - name: output-image
+#    value: quay.io/redhat-user-workloads/app-sre-tenant/aus-cli-main/aus-cli-main:{{git_tag}}
   - name: output-image
-    value: quay.io/redhat-user-workloads/app-sre-tenant/aus-cli-main/aus-cli-main:{{revision}}
+    value: quay.io/redhat-user-workloads/app-sre-tenant/aus-cli-main/aus-cli-main:v{{revision}}
   pipelineSpec:
     workspaces:
     - name: git-auth
