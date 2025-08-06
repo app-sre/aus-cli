@@ -110,7 +110,7 @@ spec:
           value: $(context.pipelineRun.name)
         - name: ownerUid
           value: $(context.pipelineRun.uid)
-    - name: run-custom-script-in-ephemeral-namespace
+    - name: run-goreleaser
       runAfter:
         - deploy-ephemeral-namespace
       params:
@@ -143,6 +143,11 @@ spec:
               secretKeyRef:
                 name: "$(tasks.deploy-ephemeral-namespace.results.secretRef)"
                 key: kubeconfig
+          - name: GITHUB_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: "app-sre-goreleaser-credentials"
+                key: token
           script: |
             #!/usr/bin/env bash
             set -euo pipefail
