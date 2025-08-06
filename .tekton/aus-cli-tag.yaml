@@ -135,7 +135,7 @@ spec:
             - use
             - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: run-script
-          image: registry.access.redhat.com/ubi9/go-toolset:1.24.4-1752083840
+          image: ghcr.io/goreleaser/goreleaser:v2.11.2
           workingDir: /var/workdir/source
           env:
           - name: KUBECONFIG_VALUE
