@@ -147,5 +147,5 @@ spec:
             #!/usr/bin/env bash
             set -euo pipefail
 
-            echo "Hello World!"
-
+            go install github.com/goreleaser/goreleaser/v2@latest
+            goreleaser release --snapshot
