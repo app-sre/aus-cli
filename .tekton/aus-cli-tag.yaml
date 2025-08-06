@@ -136,7 +136,6 @@ spec:
             - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: run-script
           image: ghcr.io/goreleaser/goreleaser:v2.11.2
-          command: [""]
           workingDir: /var/workdir/source
           env:
           - name: KUBECONFIG_VALUE
