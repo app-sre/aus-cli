@@ -23,6 +23,8 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
+  - name: output-image
+    value: quay.io/redhat-user-workloads/app-sre-tenant/aus-cli-main/aus-cli-main:{{revision}}
   pipelineSpec:
     workspaces:
     - name: git-auth
@@ -67,7 +69,7 @@ spec:
       - name: revision
         value: $(params.revision)
       - name: ociStorage
-        value: "dummy-image.git"
+        value: $(params.output-image).git
       - name: ociArtifactExpiresAfter
         value: ""
       runAfter:
