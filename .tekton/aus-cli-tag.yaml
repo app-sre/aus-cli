@@ -145,8 +145,3 @@ spec:
 
             echo "Hello World!"
 
-      when:
-      - input: $(params.ephemeral-namespace-run-script)
-        operator: notin
-        values:
-        - ""
