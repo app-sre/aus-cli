@@ -18,14 +18,135 @@ metadata:
   namespace: app-sre-tenant
 
 spec:
+  params:
+  - name: git-url
+    value: '{{source_url}}'
+  - name: revision
+    value: '{{revision}}'
   pipelineSpec:
+    workspaces:
+    - name: git-auth
+      optional: true
+    params:
+    - description: Source Repository URL
+      name: git-url
+      type: string
+    - default: ""
+      description: Revision of the Source Repository
+      name: revision
+      type: string
+    results:
+    - description: ""
+      name: CHAINS-GIT_URL
+      value: $(tasks.clone-repository-oci-ta.results.url)
+    - description: ""
+      name: CHAINS-GIT_COMMIT
+      value: $(tasks.clone-repository-oci-ta.results.commit)
     tasks:
-      - name: task
-        displayName: This is a task
-        taskSpec:
-          steps:
-            - name: task-step
-              image: registry.access.redhat.com/ubi9/ubi-micro
-              script: |
-                echo "Hi there!"
-                exit 0
+    - name: init
+      params:
+      - name: image-url
+        value: "dummy-image"
+      - name: rebuild
+        value: "false"
+      - name: skip-checks
+        value: "false"
+      taskRef:
+        params:
+        - name: name
+          value: init
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-init:0.2@sha256:08e18a4dc5f947c1d20e8353a19d013144bea87b72f67236b165dd4778523951
+        - name: kind
+          value: task
+        resolver: bundles
+    - name: clone-repository-oci-ta
+      params:
+      - name: url
+        value: $(params.git-url)
+      - name: revision
+        value: $(params.revision)
+      - name: ociStorage
+        value: "dummy-image.git"
+      - name: ociArtifactExpiresAfter
+        value: ""
+      runAfter:
+      - init
+      taskRef:
+        params:
+        - name: name
+          value: git-clone-oci-ta
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:be82c55346e8810bd1edc5547f864064da6945979baccca7dfc99990b392a02b
+        - name: kind
+          value: task
+        resolver: bundles
+      when:
+      - input: $(tasks.init.results.build)
+        operator: in
+        values:
+        - "true"
+      workspaces:
+      - name: basic-auth
+        workspace: git-auth
+    - name: deploy-ephemeral-namespace
+      runAfter:
+      - clone-repository-oci-ta
+      taskRef:
+        resolver: git
+        params:
+          - name: url
+            value: https://github.com/konflux-ci/build-definitions.git
+          - name: revision
+            value: 05686269c33b8f1aac66252c0c7b859b42dca2ed
+          - name: pathInRepo
+            value: task/eaas-provision-space/0.1/eaas-provision-space.yaml
+      params:
+        - name: ownerName
+          value: $(context.pipelineRun.name)
+        - name: ownerUid
+          value: $(context.pipelineRun.uid)
+    - name: run-custom-script-in-ephemeral-namespace
+      runAfter:
+        - deploy-ephemeral-namespace
+      params:
+      - name: SOURCE_ARTIFACT
+        value: $(tasks.clone-repository-oci-ta.results.SOURCE_ARTIFACT)
+      taskSpec:
+        params:
+        - description: The Trusted Artifact URI pointing to the artifact with the application source code.
+          name: SOURCE_ARTIFACT
+          type: string
+        stepTemplate:
+          volumeMounts:
+          - mountPath: /var/workdir
+            name: workdir
+        volumes:
+        - name: workdir
+          emptyDir: {}
+        steps:
+        - name: use-trusted-artifact
+          image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:9b180776a41d9a22a1c51539f1647c60defbbd55b44bbebdd4130e33512d8b0d
+          args:
+            - use
+            - $(params.SOURCE_ARTIFACT)=/var/workdir/source
+        - name: run-script
+          image: registry.access.redhat.com/ubi9/go-toolset:1.24.4-1752083840
+          workingDir: /var/workdir/source
+          env:
+          - name: KUBECONFIG_VALUE
+            valueFrom:
+              secretKeyRef:
+                name: "$(tasks.deploy-ephemeral-namespace.results.secretRef)"
+                key: kubeconfig
+          script: |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            echo "Hello World!"
+
+      when:
+      - input: $(params.ephemeral-namespace-run-script)
+        operator: notin
+        values:
+        - ""
