@@ -1,6 +1,10 @@
+version: 2
+
 dist: /tmp/dist
+
 builds:
-  - main: cmd/ocm-aus/main.go
+  - id: ocm-aus
+    main: cmd/ocm-aus/main.go
     env:
       - CGO_ENABLED=0
     goos:
@@ -12,18 +16,23 @@ builds:
     ignore:
       - goos: linux
         goarch: "386"
+
 archives:
-  - format: binary
+  - id: default
+    formats: [ "binary" ]
     name_template: >-
       ocm_aus_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
+
 checksum:
   name_template: 'checksums.txt'
+
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
+
 changelog:
   sort: asc
   filters:
