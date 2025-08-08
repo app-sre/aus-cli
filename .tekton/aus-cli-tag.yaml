@@ -130,4 +130,4 @@ spec:
             #!/usr/bin/env bash
             set -euo pipefail
 
-            goreleaser release --snapshot --parallelism=4
+            goreleaser release --snapshot --parallelism=1
