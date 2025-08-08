@@ -7,7 +7,8 @@ metadata:
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "25"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && git_tag.startsWith("v")
+    # pipelinesascode.tekton.dev/on-cel-expression: event == "push" && git_tag.startsWith("v")
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "main"
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: aus-cli-main
@@ -22,8 +23,10 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
+#  - name: output-image
+#    value: quay.io/redhat-user-workloads/app-sre-tenant/aus-cli-main/aus-cli-main:{{git_tag}}
   - name: output-image
-    value: quay.io/redhat-user-workloads/app-sre-tenant/aus-cli-main/aus-cli-main:{{git_tag}}
+    value: quay.io/redhat-user-workloads/app-sre-tenant/aus-cli-main/aus-cli-main:v{{revision}}
   pipelineSpec:
     workspaces:
     - name: git-auth
@@ -90,26 +93,9 @@ spec:
       workspaces:
       - name: basic-auth
         workspace: git-auth
-    - name: deploy-ephemeral-namespace
-      runAfter:
-      - clone-repository-oci-ta
-      taskRef:
-        resolver: git
-        params:
-          - name: url
-            value: https://github.com/konflux-ci/build-definitions.git
-          - name: revision
-            value: 05686269c33b8f1aac66252c0c7b859b42dca2ed
-          - name: pathInRepo
-            value: task/eaas-provision-space/0.1/eaas-provision-space.yaml
-      params:
-        - name: ownerName
-          value: $(context.pipelineRun.name)
-        - name: ownerUid
-          value: $(context.pipelineRun.uid)
     - name: run-goreleaser
       runAfter:
-        - deploy-ephemeral-namespace
+        - clone-repository-oci-ta
       params:
       - name: SOURCE_ARTIFACT
         value: $(tasks.clone-repository-oci-ta.results.SOURCE_ARTIFACT)
@@ -135,11 +121,6 @@ spec:
           image: ghcr.io/goreleaser/goreleaser:v2.11.2
           workingDir: /var/workdir/source
           env:
-          - name: KUBECONFIG_VALUE
-            valueFrom:
-              secretKeyRef:
-                name: "$(tasks.deploy-ephemeral-namespace.results.secretRef)"
-                key: kubeconfig
           - name: GITHUB_TOKEN
             valueFrom:
               secretKeyRef:
@@ -149,4 +130,4 @@ spec:
             #!/usr/bin/env bash
             set -euo pipefail
 
-            goreleaser release
+            goreleaser release --snapshot
