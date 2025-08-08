@@ -7,8 +7,7 @@ metadata:
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "25"
-    # pipelinesascode.tekton.dev/on-cel-expression: event == "push" && git_tag.startsWith("v")
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "main"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && git_tag.startsWith("v")
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: aus-cli-main
@@ -23,10 +22,8 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
-#  - name: output-image
-#    value: quay.io/redhat-user-workloads/app-sre-tenant/aus-cli-main/aus-cli-main:{{git_tag}}
   - name: output-image
-    value: quay.io/redhat-user-workloads/app-sre-tenant/aus-cli-main/aus-cli-main:v{{revision}}
+    value: quay.io/redhat-user-workloads/app-sre-tenant/aus-cli-main/aus-cli-main:{{git_tag}}
   pipelineSpec:
     workspaces:
     - name: git-auth
@@ -130,4 +127,4 @@ spec:
             #!/usr/bin/env bash
             set -euo pipefail
 
-            goreleaser release --snapshot --parallelism=1
+            goreleaser release --parallelism=1
