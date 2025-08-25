@@ -87,8 +87,10 @@ spec:
             set -euo pipefail
 
             if [ -n "${GIT_TAG}" ] && [ "${GIT_TAG}" != "" ]; then
+              echo "RELEASE"
               goreleaser release --parallelism=1
             else
+              echo "NO RELEASE"
               goreleaser release --snapshot --parallelism=1
             fi
       workspaces:
