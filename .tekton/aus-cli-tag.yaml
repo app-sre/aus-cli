@@ -88,14 +88,17 @@ spec:
                 key: token
           - name: GIT_TAG
             value: $(params.git-tag)
+          - name: REVISION
+            value: $(params.revision)
           script: |
             #!/usr/bin/env bash
             set -euo pipefail
 
             echo "GIT_TAG value: '${GIT_TAG}'"
+            echo "REVISION value: '${REVISION}'"
             if [ "${GIT_TAG}" != "{{git_tag}}" ]; then
               echo "RELEASE"
-              goreleaser release --parallelism=1
+              goreleaser release --snapshot --parallelism=1 
             else
               echo "NO RELEASE"
               goreleaser release --snapshot --parallelism=1
