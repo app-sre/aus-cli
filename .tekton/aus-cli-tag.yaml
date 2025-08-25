@@ -24,7 +24,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: git-tag
-    value: '{{source_branch}}'
+    value: '{{git_tag}}'
   pipelineSpec:
     workspaces:
     - name: workspace
@@ -93,7 +93,7 @@ spec:
             set -euo pipefail
 
             echo "GIT_TAG value: '${GIT_TAG}'"
-            if [ -n "${GIT_TAG}" ]; then
+            if [ "${GIT_TAG}" != "{{git_tag}}" ]; then
               echo "RELEASE"
               goreleaser release --parallelism=1
             else
