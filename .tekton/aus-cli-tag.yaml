@@ -86,6 +86,11 @@ spec:
             #!/usr/bin/env bash
             set -euo pipefail
 
+            ls -lah
+            pwd
+
+            ls -lah /workspace/output/source
+
             if [ -n "${GIT_TAG}" ] && [ "${GIT_TAG}" != "" ]; then
               goreleaser release --parallelism=1
             else
