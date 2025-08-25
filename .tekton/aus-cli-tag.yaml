@@ -69,11 +69,11 @@ spec:
         - clone-repository
       taskSpec:
         workspaces:
-        - name: source
+        - name: workspace
         steps:
         - name: run-script
           image: ghcr.io/goreleaser/goreleaser:v2.11.2
-          workingDir: $(workspaces.source.path)
+          workingDir: $(workspaces.workspace.path)
           env:
           - name: GITHUB_TOKEN
             valueFrom:
@@ -92,5 +92,14 @@ spec:
               goreleaser release --snapshot --parallelism=1
             fi
       workspaces:
-      - name: source
-        workspace: workspace
+      - name: workspace
+        volumeClaimTemplate:
+        metadata:
+          creationTimestamp: null
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+        status: {}
