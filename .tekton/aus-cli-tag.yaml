@@ -87,6 +87,7 @@ spec:
             set -euo pipefail
 
             echo "GIT_TAG value: '${GIT_TAG}'"
+            echo "git_tag value: '${git_tag}'"
             if [ -n "${GIT_TAG}" ]; then
               echo "RELEASE"
               goreleaser release --parallelism=1
