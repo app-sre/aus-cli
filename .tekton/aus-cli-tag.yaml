@@ -96,7 +96,7 @@ spec:
             set -x
             echo "GIT_TAG value: '${GIT_TAG}'"
             echo "REVISION value: '${REVISION}'"
-            if [ "${GIT_TAG}" != "{{git_tag}}" ]; then
+            if [[ "${GIT_TAG}" == v* ]]; then
               echo "RELEASE"
               goreleaser release --snapshot --parallelism=1 
             else
