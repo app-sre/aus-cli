@@ -23,6 +23,8 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
+  - name: git-tag
+    value: '{{git_tag}}'
   pipelineSpec:
     workspaces:
     - name: workspace
@@ -35,6 +37,10 @@ spec:
     - default: ""
       description: Revision of the Source Repository
       name: revision
+      type: string
+    - default: ""
+      description: Tag of the Source Repository
+      name: git-tag
       type: string
     results:
     - description: ""
@@ -81,7 +87,7 @@ spec:
                 name: "app-sre-goreleaser-credentials"
                 key: token
           - name: GIT_TAG
-            value: $(git_tag)
+            value: $(params.git-url)
           script: |
             #!/usr/bin/env bash
             set -euo pipefail
