@@ -6,8 +6,9 @@ metadata:
     build.appstudio.openshift.io/repo: https://github.com/app-sre/aus-cli?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     pipelinesascode.tekton.dev/max-keep-runs: "25"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && git_tag.startsWith("v")
+    pipelinesascode.tekton.dev/on-cel-expression: (event == "push" && git_tag.startsWith("v")) || (event == "pull_request" && target_branch == "main")
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: aus-cli-main
@@ -22,10 +23,9 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
-  - name: output-image
-    value: quay.io/redhat-user-workloads/app-sre-tenant/aus-cli-main/aus-cli-main:{{git_tag}}
   pipelineSpec:
     workspaces:
+    - name: workspace
     - name: git-auth
       optional: true
     params:
@@ -39,92 +39,58 @@ spec:
     results:
     - description: ""
       name: CHAINS-GIT_URL
-      value: $(tasks.clone-repository-oci-ta.results.url)
+      value: $(tasks.clone-repository.results.url)
     - description: ""
       name: CHAINS-GIT_COMMIT
-      value: $(tasks.clone-repository-oci-ta.results.commit)
+      value: $(tasks.clone-repository.results.commit)
     tasks:
-    - name: init
-      params:
-      - name: image-url
-        value: "dummy-image"
-      - name: rebuild
-        value: "false"
-      - name: skip-checks
-        value: "false"
-      taskRef:
-        params:
-        - name: name
-          value: init
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-init:0.2@sha256:08e18a4dc5f947c1d20e8353a19d013144bea87b72f67236b165dd4778523951
-        - name: kind
-          value: task
-        resolver: bundles
-    - name: clone-repository-oci-ta
+    - name: clone-repository
       params:
       - name: url
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
-      - name: ociStorage
-        value: $(params.output-image).git
-      - name: ociArtifactExpiresAfter
-        value: ""
-      runAfter:
-      - init
       taskRef:
         params:
         - name: name
-          value: git-clone-oci-ta
+          value: git-clone
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:be82c55346e8810bd1edc5547f864064da6945979baccca7dfc99990b392a02b
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone:0.1@sha256:7939000e2f92fc8b5d2c4ee4ba9000433c5aa7700d2915a1d4763853d5fd1fd4
         - name: kind
           value: task
         resolver: bundles
-      when:
-      - input: $(tasks.init.results.build)
-        operator: in
-        values:
-        - "true"
       workspaces:
+      - name: output
+        workspace: workspace
       - name: basic-auth
         workspace: git-auth
     - name: run-goreleaser
       runAfter:
-        - clone-repository-oci-ta
-      params:
-      - name: SOURCE_ARTIFACT
-        value: $(tasks.clone-repository-oci-ta.results.SOURCE_ARTIFACT)
+        - clone-repository
       taskSpec:
-        params:
-        - description: The Trusted Artifact URI pointing to the artifact with the application source code.
-          name: SOURCE_ARTIFACT
-          type: string
-        stepTemplate:
-          volumeMounts:
-          - mountPath: /var/workdir
-            name: workdir
-        volumes:
-        - name: workdir
-          emptyDir: {}
+        workspaces:
+        - name: source
         steps:
-        - name: use-trusted-artifact
-          image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:9b180776a41d9a22a1c51539f1647c60defbbd55b44bbebdd4130e33512d8b0d
-          args:
-            - use
-            - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: run-script
           image: ghcr.io/goreleaser/goreleaser:v2.11.2
-          workingDir: /var/workdir/source
+          workingDir: $(workspaces.source.path)
           env:
           - name: GITHUB_TOKEN
             valueFrom:
               secretKeyRef:
                 name: "app-sre-goreleaser-credentials"
                 key: token
+          - name: GIT_TAG
+            value: "{{git_tag}}"
           script: |
             #!/usr/bin/env bash
             set -euo pipefail
 
-            goreleaser release --parallelism=1
+            if [ -n "${GIT_TAG}" ] && [ "${GIT_TAG}" != "" ]; then
+              goreleaser release --parallelism=1
+            else
+              goreleaser release --snapshot --parallelism=1
+            fi
+      workspaces:
+      - name: source
+        workspace: workspace
