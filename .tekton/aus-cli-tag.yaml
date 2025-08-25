@@ -1,0 +1,120 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/app-sre/aus-cli?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "25"
+    pipelinesascode.tekton.dev/on-cel-expression: (event == "push" && body.ref.startsWith('refs/tags/v')) || (event == "pull_request" && target_branch == "main")
+  creationTimestamp: null
+  labels:
+    appstudio.openshift.io/application: aus-cli-main
+    appstudio.openshift.io/component: aus-cli-main
+    pipelines.appstudio.openshift.io/type: build
+  name: aus-cli-main-on-tag
+  namespace: app-sre-tenant
+
+spec:
+  params:
+  - name: git-url
+    value: '{{source_url}}'
+  - name: revision
+    value: '{{revision}}'
+  - name: git-tag
+    value: '{{git_tag}}'
+  pipelineSpec:
+    workspaces:
+    - name: workspace
+    - name: git-auth
+      optional: true
+    params:
+    - description: Source Repository URL
+      name: git-url
+      type: string
+    - default: ""
+      description: Revision of the Source Repository
+      name: revision
+      type: string
+    - default: ""
+      description: Tag of the Source Repository
+      name: git-tag
+      type: string
+    results:
+    - description: ""
+      name: CHAINS-GIT_URL
+      value: $(tasks.clone-repository.results.url)
+    - description: ""
+      name: CHAINS-GIT_COMMIT
+      value: $(tasks.clone-repository.results.commit)
+    tasks:
+    - name: clone-repository
+      params:
+      - name: url
+        value: $(params.git-url)
+      - name: revision
+        value: $(params.revision)
+      taskRef:
+        params:
+        - name: name
+          value: git-clone
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone:0.1@sha256:7939000e2f92fc8b5d2c4ee4ba9000433c5aa7700d2915a1d4763853d5fd1fd4
+        - name: kind
+          value: task
+        resolver: bundles
+      workspaces:
+      - name: output
+        workspace: workspace
+      - name: basic-auth
+        workspace: git-auth
+    - name: run-goreleaser
+      runAfter:
+        - clone-repository
+      taskSpec:
+        workspaces:
+        - name: output
+        steps:
+        - name: run-script
+          image: ghcr.io/goreleaser/goreleaser:v2.11.2
+          workingDir: $(workspaces.output.path)/source
+          env:
+          - name: GITHUB_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: "app-sre-goreleaser-credentials"
+                key: token
+          - name: GIT_TAG
+            value: $(params.git-tag)
+          - name: REVISION
+            value: $(params.revision)
+          script: |
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            echo "GIT_TAG value: '${GIT_TAG}'"
+            echo "REVISION value: '${REVISION}'"
+            if [ "${GIT_TAG}" != "{{git_tag}}" ]; then
+              echo "RELEASE"
+              goreleaser release --snapshot --parallelism=1 
+            else
+              echo "NO RELEASE"
+              goreleaser release --snapshot --parallelism=1
+            fi
+      workspaces:
+      - name: output
+        workspace: workspace
+  workspaces:
+  - name: workspace
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+  - name: git-auth
+    secret:
+      secretName: "{{ git_auth_secret }}"
