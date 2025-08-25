@@ -24,7 +24,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: git-tag
-    value: '{{body.ref}}'
+    value: '{{source_branch}}'
   pipelineSpec:
     workspaces:
     - name: workspace
