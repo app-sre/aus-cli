@@ -73,7 +73,7 @@ spec:
         steps:
         - name: run-script
           image: ghcr.io/goreleaser/goreleaser:v2.11.2
-          workingDir: $(workspaces.output.path)
+          workingDir: $(workspaces.output.path)/sources
           env:
           - name: GITHUB_TOKEN
             valueFrom:
