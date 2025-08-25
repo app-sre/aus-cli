@@ -93,17 +93,13 @@ spec:
           script: |
             #!/usr/bin/env bash
             set -euo pipefail
-            set -x
-            echo "GIT_TAG value: '${GIT_TAG}'"
-            echo "REVISION value: '${REVISION}'"
             if [[ "${GIT_TAG}" == v* ]]; then
               echo "RELEASE"
-              goreleaser release --snapshot --parallelism=1 
+              goreleaser release --parallelism=1 
             else
               echo "NO RELEASE"
               goreleaser release --snapshot --parallelism=1
             fi
-            set +x
       workspaces:
       - name: output
         workspace: workspace
