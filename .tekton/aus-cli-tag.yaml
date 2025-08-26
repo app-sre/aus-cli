@@ -8,7 +8,7 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     pipelinesascode.tekton.dev/max-keep-runs: "25"
-    pipelinesascode.tekton.dev/on-cel-expression: (event == "push" && body.ref.startsWith('refs/tags/v')) || (event == "pull_request" && target_branch == "main")
+    pipelinesascode.tekton.dev/on-cel-expression: (event == "push" && body.ref.startsWith("refs/tags/v")) || (event == "pull_request" && target_branch == "main")
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: aus-cli-main
@@ -93,12 +93,9 @@ spec:
           script: |
             #!/usr/bin/env bash
             set -euo pipefail
-
-            echo "GIT_TAG value: '${GIT_TAG}'"
-            echo "REVISION value: '${REVISION}'"
-            if [ "${GIT_TAG}" != "{{git_tag}}" ]; then
+            if [[ "${GIT_TAG}" == v* ]]; then
               echo "RELEASE"
-              goreleaser release --snapshot --parallelism=1 
+              goreleaser release --parallelism=1 
             else
               echo "NO RELEASE"
               goreleaser release --snapshot --parallelism=1
