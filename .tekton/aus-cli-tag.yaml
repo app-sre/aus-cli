@@ -25,6 +25,8 @@ spec:
     value: '{{revision}}'
   - name: git-tag
     value: '{{git_tag}}'
+  - name: event
+    value: '{{event}}'
   pipelineSpec:
     workspaces:
     - name: workspace
@@ -42,22 +44,45 @@ spec:
       description: Tag of the Source Repository
       name: git-tag
       type: string
-    results:
-    - description: ""
-      name: CHAINS-GIT_URL
-      value: $(tasks.clone-repository.results.url)
-    - description: ""
-      name: CHAINS-GIT_COMMIT
-      value: $(tasks.clone-repository.results.commit)
+    - default: ""
+      description: Event type (push, pull_request)
+      name: event
+      type: string
     tasks:
-    - name: clone-repository
+    - name: clone-repository-pr
+      when:
+        - input: "$(params.event)"
+          operator: in
+          values: ["pull_request"]
       params:
       - name: url
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
-      - name: fetchTags
-        value: true
+      taskRef:
+        params:
+        - name: name
+          value: git-clone
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone:0.1@sha256:7939000e2f92fc8b5d2c4ee4ba9000433c5aa7700d2915a1d4763853d5fd1fd4
+        - name: kind
+          value: task
+        resolver: bundles
+      workspaces:
+      - name: output
+        workspace: workspace
+      - name: basic-auth
+        workspace: git-auth
+    - name: clone-repository-tag
+      when:
+        - input: "$(params.event)"
+          operator: in
+          values: ["push"]
+      params:
+      - name: url
+        value: $(params.git-url)
+      - name: revision
+        value: $(params.git-tag)
       taskRef:
         params:
         - name: name
@@ -74,7 +99,8 @@ spec:
         workspace: git-auth
     - name: run-goreleaser
       runAfter:
-        - clone-repository
+        - clone-repository-pr
+        - clone-repository-tag
       taskSpec:
         workspaces:
         - name: output
@@ -90,8 +116,6 @@ spec:
                 key: token
           - name: GIT_TAG
             value: $(params.git-tag)
-          - name: REVISION
-            value: $(params.revision)
           script: |
             #!/usr/bin/env bash
             set -euo pipefail
