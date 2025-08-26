@@ -25,8 +25,6 @@ spec:
     value: '{{revision}}'
   - name: git-tag
     value: '{{git_tag}}'
-  - name: event
-    value: '{{event}}'
   pipelineSpec:
     workspaces:
     - name: workspace
@@ -44,10 +42,6 @@ spec:
       description: Tag of the Source Repository
       name: git-tag
       type: string
-    - default: ""
-      description: Event type (push, pull_request)
-      name: event
-      type: string
     results:
     - description: ""
       name: CHAINS-GIT_URL
@@ -62,6 +56,8 @@ spec:
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
+      - name: fetchTags
+        value: true
       - name: depth
         value: 0
       taskRef:
