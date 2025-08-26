@@ -56,6 +56,8 @@ spec:
         value: $(params.git-url)
       - name: revision
         value: $(params.revision)
+      - name: fetchTags
+        value: true
       taskRef:
         params:
         - name: name
