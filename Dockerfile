@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/go-toolset:1.24.4-1752083840 AS base
+FROM registry.access.redhat.com/ubi9/go-toolset:1.26.7-1788409979@sha256:5e68f09a652ac6627a83c57655e42e24575efb278b54336039c9308607fc6b21 AS base
 COPY LICENSE /licenses/LICENSE
 WORKDIR /build
 RUN git config --global --add safe.directory /build
@@ -8,7 +8,7 @@ FROM base AS builder
 RUN make build
 
 FROM base AS test
-COPY --from=quay.io/app-sre/golangci-lint:v2.3.0 /usr/bin/golangci-lint /bin/golangci-lint
+COPY --from=quay.io/app-sre/golangci-lint:v2.13.2@sha256:66fb650730c873689cef045d2bbfb4bbc1e80acfb92a2b3d51dac0c1ea727db6 /usr/bin/golangci-lint /bin/golangci-lint
 RUN golangci-lint run
 RUN make test
 
